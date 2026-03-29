@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/DatingAppDB
+    username: DatingAppDB
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.format_sql: true
+  flyway:
+    enabled: false
+    locations: classpath:db/migration
+
+server:
+  port: 8090
+
+app:
+  jwt:
+    secret: "change-me-please-change-me-please-change-me"
+    expirationMinutes: 60
+  s3:
+    bucket: your-bucket-name
+    region: ap-northeast-1

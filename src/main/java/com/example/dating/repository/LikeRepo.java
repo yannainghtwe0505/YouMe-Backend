@@ -1,0 +1,9 @@
+package com.example.dating.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.example.dating.model.entity.LikeEntity;
+
+public interface LikeRepo extends JpaRepository<LikeEntity, Long> {
+	boolean existsByFromUserAndToUser(Long from, Long to);
+}
