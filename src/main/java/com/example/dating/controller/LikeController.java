@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.dating.service.LikeService;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -16,6 +17,13 @@ public class LikeController {
 
 	public LikeController(LikeService svc) {
 		this.svc = svc;
+	}
+
+	@GetMapping
+	public ResponseEntity<List<Map<String, Object>>> getLikes(@AuthenticationPrincipal User me) {
+		Long userId = Long.valueOf(me.getUsername());
+		List<Map<String, Object>> likes = svc.getLikesForUser(userId);
+		return ResponseEntity.ok(likes);
 	}
 
 	@PostMapping("/{toUserId}")
