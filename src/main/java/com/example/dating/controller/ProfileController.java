@@ -47,4 +47,13 @@ public class ProfileController {
 	    return ResponseEntity.ok(repo.save(body));
 	}
 
+	@PostMapping("/upgrade")
+	public ResponseEntity<?> upgrade(@AuthenticationPrincipal User me) {
+		Long id = Long.valueOf(me.getUsername());
+		if (!repo.existsById(id)) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok().body("upgraded");
+	}
+
 }
