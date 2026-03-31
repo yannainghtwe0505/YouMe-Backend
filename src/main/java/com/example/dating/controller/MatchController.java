@@ -10,20 +10,20 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.dating.service.FeedService;
+import com.example.dating.service.MatchQueryService;
 
 @RestController
-@RequestMapping("/feed")
-public class FeedController {
-	private final FeedService feedService;
+@RequestMapping("/matches")
+public class MatchController {
+	private final MatchQueryService matchQueryService;
 
-	public FeedController(FeedService feedService) {
-		this.feedService = feedService;
+	public MatchController(MatchQueryService matchQueryService) {
+		this.matchQueryService = matchQueryService;
 	}
 
 	@GetMapping
-	public ResponseEntity<List<Map<String, Object>>> feed(@AuthenticationPrincipal User me) {
-		Long myId = Long.valueOf(me.getUsername());
-		return ResponseEntity.ok(feedService.feedForUser(myId));
+	public ResponseEntity<List<Map<String, Object>>> list(@AuthenticationPrincipal User me) {
+		Long userId = Long.valueOf(me.getUsername());
+		return ResponseEntity.ok(matchQueryService.listMatchesForUser(userId));
 	}
 }

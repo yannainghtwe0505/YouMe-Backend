@@ -14,6 +14,7 @@ import com.example.dating.model.entity.UserEntity;
 import com.example.dating.repository.UserRepo;
 import com.example.dating.security.JwtService;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -46,7 +47,7 @@ public class AuthController {
 	}
 
 	@PostMapping("/register")
-	public ResponseEntity<?> register(@RequestBody RegisterReq req) {
+	public ResponseEntity<?> register(@Valid @RequestBody RegisterReq req) {
 		
 		if (users.findByEmail(req.email).isPresent()) {
 			return ResponseEntity.badRequest().body(Map.of("error", "email in use"));
@@ -61,10 +62,8 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<?> login(@RequestBody LoginReq req) {
+	public ResponseEntity<?> login(@Valid @RequestBody LoginReq req) {
 		var u = users.findByEmail(req.email).orElse(null);
-		System.out.println("Password length: " + req.password.length());
-		System.out.println("User from DB: " + u);
 		if (u == null || !encoder.matches(req.password, u.getPasswordHash())) {
 			return ResponseEntity.status(401).body(Map.of("error", "invalid creds"));
 		}

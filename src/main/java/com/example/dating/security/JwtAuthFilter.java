@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,6 +22,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 	public JwtAuthFilter(JwtService jwt, UserDetailsService uds) {
 		this.jwt = jwt;
 		this.uds = uds;
+	}
+
+	@Override
+	protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+		return pathWithoutContext(request).startsWith("/auth/");
+	}
+
+	private static String pathWithoutContext(HttpServletRequest request) {
+		String uri = request.getRequestURI();
+		String ctx = request.getContextPath();
+		if (ctx != null && !ctx.isEmpty() && uri.startsWith(ctx)) {
+			return uri.substring(ctx.length());
+		}
+		return uri;
 	}
 
 	@Override

@@ -1,6 +1,22 @@
--- Canonical schema aligned with JPA entities (Spring physical naming: snake_case).
--- If Flyway was previously run with an older checksum, run: flyway repair
--- Or drop the schema and migrate again (dev only).
+-- =============================================================================
+-- DEV ONLY: drop all dating-app tables and recreate from current JPA model.
+-- =============================================================================
+-- Fixes errors like: column le1_0.super_like does not exist
+--
+--   psql -U DatingAppDB -d DatingAppDB -f scripts/recreate-schema.sql
+--
+-- After this, re-seed users if needed (see src/main/resources/data.sql).
+-- =============================================================================
+
+BEGIN;
+
+drop table if exists messages cascade;
+drop table if exists matches cascade;
+drop table if exists likes cascade;
+drop table if exists passes cascade;
+drop table if exists photos cascade;
+drop table if exists profiles cascade;
+drop table if exists users cascade;
 
 create table users (
   id bigserial primary key,
@@ -72,3 +88,5 @@ create table messages (
 );
 
 create index idx_messages_match_created on messages(match_id, created_at);
+
+COMMIT;

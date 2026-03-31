@@ -5,6 +5,7 @@ import com.example.dating.model.entity.LikeEntity;
 import com.example.dating.model.entity.MatchEntity;
 import com.example.dating.repository.LikeRepo;
 import com.example.dating.repository.MatchRepo;
+import com.example.dating.repository.ProfileRepo;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,12 +17,24 @@ import java.util.stream.Collectors;
 
 @Service
 public class LikeService {
+
+	public record LikeOutcome(boolean matched, Long matchId) {
+		public static LikeOutcome noMatch() {
+			return new LikeOutcome(false, null);
+		}
+
+		public static LikeOutcome matched(Long id) {
+			return new LikeOutcome(true, id);
+		}
+	}
 	private final LikeRepo likeRepo;
 	private final MatchRepo matchRepo;
+	private final ProfileRepo profileRepo;
 
-	public LikeService(LikeRepo likeRepo, MatchRepo matchRepo) {
+	public LikeService(LikeRepo likeRepo, MatchRepo matchRepo, ProfileRepo profileRepo) {
 		this.likeRepo = likeRepo;
 		this.matchRepo = matchRepo;
+		this.profileRepo = profileRepo;
 	}
 
 	public List<Map<String, Object>> getLikesForUser(Long userId) {
@@ -38,7 +51,10 @@ public class LikeService {
 				Map<String, Object> likeData = new HashMap<>();
 				likeData.put("id", like.getId());
 				likeData.put("toUserId", otherUserId);
-				likeData.put("toUserName", "User " + otherUserId);
+				likeData.put("toUserName", profileRepo.findById(otherUserId)
+						.map(p -> p.getDisplayName() != null ? p.getDisplayName() : "User " + otherUserId)
+						.orElse("User " + otherUserId));
+				likeData.put("superLike", like.isSuperLike());
 				likeData.put("matched", matched);
 				likeData.put("matchId", matchId);
 				likeData.put("createdAt", like.getCreatedAt());
@@ -48,23 +64,33 @@ public class LikeService {
 	}
 
 	@Transactional
-	public boolean likeAndMaybeMatch(Long from, Long to) {
+	public LikeOutcome likeAndMaybeMatch(Long from, Long to) {
+		return saveLikeAndMaybeMatch(from, to, false);
+	}
+
+	@Transactional
+	public LikeOutcome superLikeAndMaybeMatch(Long from, Long to) {
+		return saveLikeAndMaybeMatch(from, to, true);
+	}
+
+	private LikeOutcome saveLikeAndMaybeMatch(Long from, Long to, boolean superLike) {
 		if (from.equals(to) || likeRepo.existsByFromUserAndToUser(from, to))
-			return false;
+			return LikeOutcome.noMatch();
 		LikeEntity le = new LikeEntity();
 		le.setFromUser(from);
 		le.setToUser(to);
+		le.setSuperLike(superLike);
 		likeRepo.save(le);
 		if (likeRepo.existsByFromUserAndToUser(to, from)) {
 			Long a = Math.min(from, to), b = Math.max(from, to);
-			matchRepo.findByUserAAndUserB(a, b).orElseGet(() -> {
+			MatchEntity saved = matchRepo.findByUserAAndUserB(a, b).orElseGet(() -> {
 				MatchEntity m = new MatchEntity();
 				m.setUserA(a);
 				m.setUserB(b);
 				return matchRepo.save(m);
 			});
-			return true;
+			return LikeOutcome.matched(saved.getId());
 		}
-		return false;
+		return LikeOutcome.noMatch();
 	}
 }

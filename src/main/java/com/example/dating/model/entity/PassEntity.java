@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "likes", uniqueConstraints = @UniqueConstraint(columnNames = { "from_user", "to_user" }))
-public class LikeEntity {
+@Table(name = "passes", uniqueConstraints = @UniqueConstraint(columnNames = { "from_user", "to_user" }))
+public class PassEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -13,8 +13,6 @@ public class LikeEntity {
 	private Long fromUser;
 	@Column(name = "to_user", nullable = false)
 	private Long toUser;
-	@Column(name = "super_like", nullable = false)
-	private boolean superLike = false;
 	private Instant createdAt;
 
 	@PrePersist
@@ -45,14 +43,6 @@ public class LikeEntity {
 
 	public void setToUser(Long toUser) {
 		this.toUser = toUser;
-	}
-
-	public boolean isSuperLike() {
-		return superLike;
-	}
-
-	public void setSuperLike(boolean superLike) {
-		this.superLike = superLike;
 	}
 
 	public Instant getCreatedAt() {

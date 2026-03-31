@@ -4,8 +4,9 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
 
-import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.JdbcTypeCode;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hibernate.type.SqlTypes;
 
 @Entity
@@ -13,9 +14,11 @@ import org.hibernate.type.SqlTypes;
 public class ProfileEntity {
 	@Id
 	private Long userId;
+	@Column(length = 100)
 	private String displayName;
 	@Column(length = 2000)
 	private String bio;
+	@Column(length = 20)
 	private String gender;
 	private LocalDate birthday;
     @JdbcTypeCode(SqlTypes.JSON)           //  tell Hibernate this is JSON
@@ -26,6 +29,19 @@ public class ProfileEntity {
 	private Integer minAge;
 	private Integer maxAge;
 	private Integer distanceKm;
+	@Column(length = 255)
+	private String city;
+	@Column(length = 200)
+	private String education;
+	@Column(length = 200)
+	private String occupation;
+	@Column(length = 500)
+	private String hobbies;
+	@Column(name = "photo_url", length = 1024)
+	private String photoUrl;
+	@Column(name = "is_premium", nullable = false)
+	@JsonProperty("isPremium")
+	private boolean premium = false;
 
 	public Long getUserId() {
 		return userId;
@@ -113,5 +129,53 @@ public class ProfileEntity {
 
 	public void setDistanceKm(Integer distanceKm) {
 		this.distanceKm = distanceKm;
+	}
+
+	public String getCity() {
+		return city;
+	}
+
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+	public String getEducation() {
+		return education;
+	}
+
+	public void setEducation(String education) {
+		this.education = education;
+	}
+
+	public String getOccupation() {
+		return occupation;
+	}
+
+	public void setOccupation(String occupation) {
+		this.occupation = occupation;
+	}
+
+	public String getHobbies() {
+		return hobbies;
+	}
+
+	public void setHobbies(String hobbies) {
+		this.hobbies = hobbies;
+	}
+
+	public String getPhotoUrl() {
+		return photoUrl;
+	}
+
+	public void setPhotoUrl(String photoUrl) {
+		this.photoUrl = photoUrl;
+	}
+
+	public boolean isPremium() {
+		return premium;
+	}
+
+	public void setPremium(boolean premium) {
+		this.premium = premium;
 	}
 }

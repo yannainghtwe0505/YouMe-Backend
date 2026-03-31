@@ -3,8 +3,12 @@ spring:
     url: jdbc:postgresql://localhost:5432/DatingAppDB
     username: DatingAppDB
     password: postgres
+    # If logs show SQLState 42501 permission denied for table users: schema owner is not this user.
+    # Run scripts/grant-dating-app-privileges.sql as PostgreSQL superuser (see script header).
   jpa:
     hibernate:
+      # Use SQL scripts (db/migration, scripts/*.sql) for DDL. Avoids ALTER TABLE as a
+      # non-owner DB user (e.g. "must be owner of table profiles").
       ddl-auto: validate
     properties:
       hibernate.format_sql: true
@@ -22,3 +26,5 @@ app:
   s3:
     bucket: your-bucket-name
     region: ap-northeast-1
+  media:
+    public-base-url: "https://example-s3/your-bucket-name"

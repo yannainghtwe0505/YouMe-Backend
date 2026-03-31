@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.dating.service.LikeService;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,10 @@ public class LikeController {
 
 	@PostMapping("/{toUserId}")
 	public ResponseEntity<?> like(@AuthenticationPrincipal User me, @PathVariable("toUserId") Long toUserId) {
-		boolean matched = svc.likeAndMaybeMatch(Long.valueOf(me.getUsername()), toUserId);
-		return ResponseEntity.ok(Map.of("matched", matched));
+		var out = svc.likeAndMaybeMatch(Long.valueOf(me.getUsername()), toUserId);
+		Map<String, Object> body = new LinkedHashMap<>();
+		body.put("matched", out.matched());
+		body.put("matchId", out.matchId());
+		return ResponseEntity.ok(body);
 	}
 }
