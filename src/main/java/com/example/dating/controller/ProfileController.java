@@ -12,8 +12,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
+import com.example.dating.config.MediaUrls;
 import com.example.dating.dto.MeResponse;
 import com.example.dating.model.entity.ProfileEntity;
+import com.example.dating.repository.PhotoRepo;
 import com.example.dating.repository.ProfileRepo;
 import com.example.dating.repository.UserRepo;
 
@@ -22,10 +26,14 @@ import com.example.dating.repository.UserRepo;
 public class ProfileController {
 	private final ProfileRepo repo;
 	private final UserRepo users;
+	private final PhotoRepo photoRepo;
+	private final MediaUrls mediaUrls;
 
-	public ProfileController(ProfileRepo repo, UserRepo users) {
+	public ProfileController(ProfileRepo repo, UserRepo users, PhotoRepo photoRepo, MediaUrls mediaUrls) {
 		this.repo = repo;
 		this.users = users;
+		this.photoRepo = photoRepo;
+		this.mediaUrls = mediaUrls;
 	}
 
 	@GetMapping
@@ -35,13 +43,55 @@ public class ProfileController {
 			return ResponseEntity.notFound().build();
 		var user = users.findById(id).orElseThrow();
 		var profile = repo.findById(id).orElseThrow();
-		return ResponseEntity.ok(MeResponse.from(user, profile));
+		List<String> photoUrls = photoRepo.findByUserIdOrderByCreatedAtAsc(id).stream()
+				.map(ph -> mediaUrls.urlForKey(ph.getS3Key()))
+				.filter(u -> u != null)
+				.limit(6)
+				.toList();
+		return ResponseEntity.ok(MeResponse.from(user, profile, photoUrls));
 	}
 
 	@PutMapping("/profile")
-	public ResponseEntity<?> upsert(@AuthenticationPrincipal User me, @RequestBody ProfileEntity body) {
-		body.setUserId(Long.valueOf(me.getUsername()));
-		return ResponseEntity.ok(repo.save(body));
+	public ResponseEntity<?> upsert(@AuthenticationPrincipal User me, @RequestBody ProfileEntity patch) {
+		Long id = Long.valueOf(me.getUsername());
+		patch.setUserId(id);
+		ProfileEntity existing = repo.findById(id).orElseThrow();
+		applyProfilePatch(patch, existing);
+		return ResponseEntity.ok(repo.save(existing));
+	}
+
+	/** Merge non-null fields from patch so JSON partial updates do not null out stored data. */
+	private static void applyProfilePatch(ProfileEntity patch, ProfileEntity target) {
+		if (patch.getDisplayName() != null)
+			target.setDisplayName(patch.getDisplayName());
+		if (patch.getBio() != null)
+			target.setBio(patch.getBio());
+		if (patch.getGender() != null)
+			target.setGender(patch.getGender());
+		if (patch.getBirthday() != null)
+			target.setBirthday(patch.getBirthday());
+		if (patch.getLatitude() != null)
+			target.setLatitude(patch.getLatitude());
+		if (patch.getLongitude() != null)
+			target.setLongitude(patch.getLongitude());
+		if (patch.getMinAge() != null)
+			target.setMinAge(patch.getMinAge());
+		if (patch.getMaxAge() != null)
+			target.setMaxAge(patch.getMaxAge());
+		if (patch.getDistanceKm() != null)
+			target.setDistanceKm(patch.getDistanceKm());
+		if (patch.getCity() != null)
+			target.setCity(patch.getCity());
+		if (patch.getEducation() != null)
+			target.setEducation(patch.getEducation());
+		if (patch.getOccupation() != null)
+			target.setOccupation(patch.getOccupation());
+		if (patch.getHobbies() != null)
+			target.setHobbies(patch.getHobbies());
+		if (patch.getInterests() != null)
+			target.setInterests(patch.getInterests());
+		if (patch.getPhotoUrl() != null)
+			target.setPhotoUrl(patch.getPhotoUrl());
 	}
 	@PostMapping("/profile")
 	public ResponseEntity<?> create(

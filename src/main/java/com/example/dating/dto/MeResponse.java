@@ -2,6 +2,7 @@ package com.example.dating.dto;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.List;
 
 import com.example.dating.model.entity.ProfileEntity;
 import com.example.dating.model.entity.UserEntity;
@@ -19,13 +20,17 @@ public record MeResponse(
 		String work,
 		String hobby,
 		boolean isPremium,
-		String avatar) {
+		String avatar,
+		Double latitude,
+		Double longitude,
+		List<String> photos) {
 
-	public static MeResponse from(UserEntity user, ProfileEntity p) {
+	public static MeResponse from(UserEntity user, ProfileEntity p, List<String> photoUrls) {
 		Integer age = null;
 		if (p.getBirthday() != null)
 			age = Period.between(p.getBirthday(), LocalDate.now()).getYears();
 		String dist = p.getDistanceKm() != null ? String.valueOf(p.getDistanceKm()) : null;
+		List<String> photos = photoUrls == null ? List.of() : List.copyOf(photoUrls);
 		return new MeResponse(
 				user.getId(),
 				user.getEmail(),
@@ -39,6 +44,9 @@ public record MeResponse(
 				p.getOccupation(),
 				p.getHobbies(),
 				p.isPremium(),
-				p.getPhotoUrl());
+				p.getPhotoUrl(),
+				p.getLatitude(),
+				p.getLongitude(),
+				photos);
 	}
 }
