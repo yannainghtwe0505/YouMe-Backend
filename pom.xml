@@ -82,6 +82,13 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- AWS S3 (presigned GET for private buckets) -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.28.29</version>
+		</dependency>
+
 		<!-- OpenAPI -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
