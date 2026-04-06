@@ -10,4 +10,6 @@ public interface LikeRepo extends JpaRepository<LikeEntity, Long> {
 	boolean existsByFromUserAndToUser(Long from, Long to);
 
 	List<LikeEntity> findByFromUser(Long fromUser);
+
+	List<LikeEntity> findByToUser(Long toUser);
 }

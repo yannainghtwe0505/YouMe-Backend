@@ -29,14 +29,16 @@ public class FeedService {
 	private final PassRepo passRepo;
 	private final PhotoRepo photoRepo;
 	private final MediaUrls mediaUrls;
+	private final BlockService blockService;
 
 	public FeedService(ProfileRepo profiles, LikeRepo likeRepo, PassRepo passRepo, PhotoRepo photoRepo,
-			MediaUrls mediaUrls) {
+			MediaUrls mediaUrls, BlockService blockService) {
 		this.profiles = profiles;
 		this.likeRepo = likeRepo;
 		this.passRepo = passRepo;
 		this.photoRepo = photoRepo;
 		this.mediaUrls = mediaUrls;
+		this.blockService = blockService;
 	}
 
 	public List<Map<String, Object>> feedForUser(Long myId) {
@@ -46,11 +48,13 @@ public class FeedService {
 		Set<Long> passedTargets = passRepo.findByFromUser(myId).stream()
 				.map(p -> p.getToUser())
 				.collect(Collectors.toCollection(HashSet::new));
+		Set<Long> blockedPeers = blockService.hiddenPeerIdsFor(myId);
 
 		List<ProfileEntity> candidates = profiles.findAll().stream()
 				.filter(p -> !p.getUserId().equals(myId))
 				.filter(p -> !likedTargets.contains(p.getUserId()))
 				.filter(p -> !passedTargets.contains(p.getUserId()))
+				.filter(p -> !blockedPeers.contains(p.getUserId()))
 				.limit(50)
 				.toList();
 

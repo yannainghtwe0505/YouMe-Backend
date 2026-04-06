@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.dating.model.entity.MessageEntity;
 import com.example.dating.repository.MessageRepo;
+import com.example.dating.service.BlockService;
 import com.example.dating.service.MatchQueryService;
 
 import jakarta.validation.constraints.NotBlank;
@@ -28,10 +29,12 @@ import jakarta.validation.constraints.NotBlank;
 public class MessageController {
 	private final MessageRepo repo;
 	private final MatchQueryService matchQueryService;
+	private final BlockService blockService;
 
-	public MessageController(MessageRepo repo, MatchQueryService matchQueryService) {
+	public MessageController(MessageRepo repo, MatchQueryService matchQueryService, BlockService blockService) {
 		this.repo = repo;
 		this.matchQueryService = matchQueryService;
+		this.blockService = blockService;
 	}
 
 	public static class SendReq {
@@ -45,6 +48,11 @@ public class MessageController {
 		Long userId = Long.valueOf(me.getUsername());
 		if (!matchQueryService.userParticipatesInMatch(userId, matchId))
 			return ResponseEntity.status(403).build();
+		if (matchQueryService.peerUserIdForMatch(matchId, userId)
+				.map(peer -> blockService.eitherBlocked(userId, peer))
+				.orElse(true)) {
+			return ResponseEntity.status(403).build();
+		}
 		var slice = repo.findByMatchIdOrderByCreatedAtAsc(matchId, PageRequest.of(page, 50));
 		List<Map<String, Object>> content = slice.stream()
 				.map(m -> toRow(m, userId))
@@ -61,6 +69,11 @@ public class MessageController {
 		Long userId = Long.valueOf(me.getUsername());
 		if (!matchQueryService.userParticipatesInMatch(userId, matchId))
 			return ResponseEntity.status(403).build();
+		if (matchQueryService.peerUserIdForMatch(matchId, userId)
+				.map(peer -> blockService.eitherBlocked(userId, peer))
+				.orElse(true)) {
+			return ResponseEntity.status(403).build();
+		}
 		MessageEntity m = new MessageEntity();
 		m.setMatchId(matchId);
 		m.setSenderId(userId);

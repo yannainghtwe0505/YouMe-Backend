@@ -1,0 +1,9 @@
+# Local dev: create any missing tables from JPA (Hibernate) and backfill read state once.
+# Use when Flyway is off in application.yml and some migrations were never applied.
+# Start: mvn spring-boot:run -Dspring-boot.run.profiles=dev
+spring:
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update

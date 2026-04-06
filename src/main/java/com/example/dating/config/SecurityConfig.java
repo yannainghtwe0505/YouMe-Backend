@@ -70,7 +70,7 @@ public class SecurityConfig {
 				.accessDeniedHandler(this::writeAccessDeniedJson))
 			.authorizeHttpRequests(reg -> reg
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-				.requestMatchers("/auth/**").permitAll()
+				.requestMatchers(HttpMethod.POST, "/auth/login", "/auth/register").permitAll()
 				.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 				.anyRequest().authenticated());
 		http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

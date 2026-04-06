@@ -6,8 +6,11 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +19,7 @@ import com.example.dating.config.MediaUrls;
 import com.example.dating.model.entity.PhotoEntity;
 import com.example.dating.repository.PhotoRepo;
 import com.example.dating.repository.ProfileRepo;
+import com.example.dating.service.PhotoService;
 import com.example.dating.service.PresignService;
 
 @RestController
@@ -27,12 +31,15 @@ public class PhotoController {
 	private final PhotoRepo photoRepo;
 	private final ProfileRepo profileRepo;
 	private final MediaUrls mediaUrls;
+	private final PhotoService photoService;
 
-	public PhotoController(PresignService presign, PhotoRepo photoRepo, ProfileRepo profileRepo, MediaUrls mediaUrls) {
+	public PhotoController(PresignService presign, PhotoRepo photoRepo, ProfileRepo profileRepo, MediaUrls mediaUrls,
+			PhotoService photoService) {
 		this.presign = presign;
 		this.photoRepo = photoRepo;
 		this.profileRepo = profileRepo;
 		this.mediaUrls = mediaUrls;
+		this.photoService = photoService;
 	}
 
 	@GetMapping
@@ -45,6 +52,20 @@ public class PhotoController {
 						"primary", Boolean.TRUE.equals(ph.getPrimaryPhoto())))
 				.toList();
 		return ResponseEntity.ok(out);
+	}
+
+	@DeleteMapping("/{id}")
+	public ResponseEntity<?> deleteMine(@AuthenticationPrincipal User me, @PathVariable("id") Long photoId) {
+		Long userId = Long.valueOf(me.getUsername());
+		return photoService.deleteOwnedPhoto(userId, photoId) ? ResponseEntity.noContent().build()
+				: ResponseEntity.notFound().build();
+	}
+
+	@PutMapping("/{id}/primary")
+	public ResponseEntity<?> setPrimary(@AuthenticationPrincipal User me, @PathVariable("id") Long photoId) {
+		Long userId = Long.valueOf(me.getUsername());
+		return photoService.setPrimaryPhoto(userId, photoId) ? ResponseEntity.ok(Map.of("ok", true))
+				: ResponseEntity.notFound().build();
 	}
 
 	@PostMapping("/presign")

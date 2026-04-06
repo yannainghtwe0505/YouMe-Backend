@@ -26,14 +26,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 	@Override
 	protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
-		return pathWithoutContext(request).startsWith("/auth/");
+		String path = pathWithoutContext(request);
+		// Only login/register are public; other /auth/* routes (e.g. password change) need JWT parsed here.
+		return path.equals("/auth/login") || path.equals("/auth/register");
 	}
 
 	private static String pathWithoutContext(HttpServletRequest request) {
 		String uri = request.getRequestURI();
 		String ctx = request.getContextPath();
 		if (ctx != null && !ctx.isEmpty() && uri.startsWith(ctx)) {
-			return uri.substring(ctx.length());
+			uri = uri.substring(ctx.length());
+		}
+		int q = uri.indexOf('?');
+		if (q >= 0) {
+			uri = uri.substring(0, q);
+		}
+		if (uri.length() > 1 && uri.endsWith("/")) {
+			uri = uri.substring(0, uri.length() - 1);
 		}
 		return uri;
 	}

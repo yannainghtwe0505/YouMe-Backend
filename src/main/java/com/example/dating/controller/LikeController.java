@@ -21,10 +21,17 @@ public class LikeController {
 	}
 
 	@GetMapping
-	public ResponseEntity<List<Map<String, Object>>> getLikes(@AuthenticationPrincipal User me) {
+	public ResponseEntity<List<Map<String, Object>>> getOutboundLikes(@AuthenticationPrincipal User me) {
 		Long userId = Long.valueOf(me.getUsername());
 		List<Map<String, Object>> likes = svc.getLikesForUser(userId);
 		return ResponseEntity.ok(likes);
+	}
+
+	/** People who liked you; you have not liked back yet (classic "Likes you" queue). */
+	@GetMapping("/inbound")
+	public ResponseEntity<List<Map<String, Object>>> getInboundLikes(@AuthenticationPrincipal User me) {
+		Long userId = Long.valueOf(me.getUsername());
+		return ResponseEntity.ok(svc.getInboundLikesForUser(userId));
 	}
 
 	@PostMapping("/{toUserId}")

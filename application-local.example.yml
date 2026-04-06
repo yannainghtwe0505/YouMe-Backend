@@ -1,0 +1,7 @@
+# Copy to application-local.yml in this folder (same directory as pom.xml).
+# That file is gitignored — safe place for local AWS keys when env vars are not set.
+#
+# app:
+#   s3:
+#     access-key-id: YOUR_ACCESS_KEY
+#     secret-access-key: YOUR_SECRET_KEY
