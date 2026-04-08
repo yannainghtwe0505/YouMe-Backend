@@ -25,6 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.example.dating.security.JwtAuthFilter;
+import com.example.dating.security.PendingOnboardingRouteFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
@@ -37,6 +38,11 @@ public class SecurityConfig {
 		this.jwtAuthFilter = f;
 		this.uds = uds;
 		this.objectMapper = objectMapper;
+	}
+
+	@Bean
+	PendingOnboardingRouteFilter pendingOnboardingRouteFilter() {
+		return new PendingOnboardingRouteFilter(objectMapper);
 	}
 
 	@Bean
@@ -58,7 +64,8 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain filterChain(HttpSecurity http, PendingOnboardingRouteFilter pendingOnboardingRouteFilter)
+			throws Exception {
 		http
 			.cors(Customizer.withDefaults())
 			.csrf(AbstractHttpConfigurer::disable)
@@ -71,9 +78,16 @@ public class SecurityConfig {
 			.authorizeHttpRequests(reg -> reg
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers(HttpMethod.POST, "/auth/login", "/auth/register").permitAll()
+				.requestMatchers(HttpMethod.GET, "/auth/registration/tokyo-wards").permitAll()
+				.requestMatchers(HttpMethod.POST, "/auth/registration/email/send", "/auth/registration/email/verify",
+						"/auth/registration/phone/send", "/auth/registration/phone/verify",
+						"/auth/registration/password").permitAll()
+				.requestMatchers(HttpMethod.GET, "/ai/capabilities").permitAll()
+				.requestMatchers("/ws/chat").permitAll()
 				.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 				.anyRequest().authenticated());
 		http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+		http.addFilterAfter(pendingOnboardingRouteFilter, JwtAuthFilter.class);
 		return http.build();
 	}
 

@@ -1,6 +1,8 @@
 package com.example.dating.controller;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,6 +26,7 @@ import com.example.dating.model.entity.ProfileEntity;
 import com.example.dating.repository.PhotoRepo;
 import com.example.dating.repository.ProfileRepo;
 import com.example.dating.repository.UserRepo;
+import com.example.dating.service.OnboardingRegistrationService;
 
 import com.example.dating.model.entity.UserEntity;
 
@@ -38,14 +41,16 @@ public class ProfileController {
 	private final PhotoRepo photoRepo;
 	private final MediaUrls mediaUrls;
 	private final PasswordEncoder passwordEncoder;
+	private final OnboardingRegistrationService onboarding;
 
 	public ProfileController(ProfileRepo repo, UserRepo users, PhotoRepo photoRepo, MediaUrls mediaUrls,
-			PasswordEncoder passwordEncoder) {
+			PasswordEncoder passwordEncoder, OnboardingRegistrationService onboarding) {
 		this.repo = repo;
 		this.users = users;
 		this.photoRepo = photoRepo;
 		this.mediaUrls = mediaUrls;
 		this.passwordEncoder = passwordEncoder;
+		this.onboarding = onboarding;
 	}
 
 	@PutMapping("/password")
@@ -76,7 +81,11 @@ public class ProfileController {
 
 	@GetMapping
 	public ResponseEntity<?> get(@AuthenticationPrincipal User me) {
-		Long id = Long.valueOf(me.getUsername());
+		String sub = me.getUsername();
+		if (sub.startsWith("pending:")) {
+			return ResponseEntity.ok(onboarding.meForPendingPrincipal(Long.parseLong(sub.substring(8))));
+		}
+		Long id = Long.valueOf(sub);
 		if (!repo.existsById(id))
 			return ResponseEntity.notFound().build();
 		var user = users.findById(id).orElseThrow();
@@ -96,6 +105,83 @@ public class ProfileController {
 		ProfileEntity existing = repo.findById(id).orElseThrow();
 		applyProfilePatch(patch, existing);
 		return ResponseEntity.ok(repo.save(existing));
+	}
+
+	/**
+	 * Explicit discovery radius and optional coordinates. Use {@code maxDistanceKm: null} to show people
+	 * at any distance (subject to deck limits).
+	 */
+	@PutMapping("/discovery-settings")
+	public ResponseEntity<?> discoverySettings(@AuthenticationPrincipal User me,
+			@RequestBody Map<String, Object> body) {
+		Long id = Long.valueOf(me.getUsername());
+		ProfileEntity p = repo.findById(id).orElseThrow();
+		if (body.containsKey("maxDistanceKm")) {
+			Object raw = body.get("maxDistanceKm");
+			if (raw == null) {
+				p.setDistanceKm(null);
+			} else if (raw instanceof Number n) {
+				int km = n.intValue();
+				if (km <= 0)
+					p.setDistanceKm(null);
+				else
+					p.setDistanceKm(Math.min(500, Math.max(1, km)));
+			} else {
+				return ResponseEntity.badRequest().body(Map.of("error", "maxDistanceKm must be a number or null"));
+			}
+		}
+		if (body.containsKey("latitude") && body.get("latitude") instanceof Number)
+			p.setLatitude(((Number) body.get("latitude")).doubleValue());
+		if (body.containsKey("longitude") && body.get("longitude") instanceof Number)
+			p.setLongitude(((Number) body.get("longitude")).doubleValue());
+		if (body.containsKey("minAge")) {
+			Object a = body.get("minAge");
+			if (a == null)
+				p.setMinAge(null);
+			else if (a instanceof Number n)
+				p.setMinAge(Math.max(18, Math.min(80, n.intValue())));
+			else
+				return ResponseEntity.badRequest().body(Map.of("error", "minAge must be a number or null"));
+		}
+		if (body.containsKey("maxAge")) {
+			Object a = body.get("maxAge");
+			if (a == null)
+				p.setMaxAge(null);
+			else if (a instanceof Number n)
+				p.setMaxAge(Math.max(18, Math.min(80, n.intValue())));
+			else
+				return ResponseEntity.badRequest().body(Map.of("error", "maxAge must be a number or null"));
+		}
+		putJsonMap(body, "discoverySettings", p::setDiscoverySettings);
+		putJsonMap(body, "lifestyle", p::setLifestyle);
+		repo.save(p);
+		Map<String, Object> out = new HashMap<>();
+		out.put("maxDistanceKm", p.getDistanceKm());
+		out.put("latitude", p.getLatitude());
+		out.put("longitude", p.getLongitude());
+		out.put("minAge", p.getMinAge());
+		out.put("maxAge", p.getMaxAge());
+		out.put("discoverySettings", p.getDiscoverySettings());
+		out.put("lifestyle", p.getLifestyle());
+		return ResponseEntity.ok(out);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void putJsonMap(Map<String, Object> body, String key, Consumer<Map<String, Object>> setter) {
+		if (!body.containsKey(key))
+			return;
+		Object raw = body.get(key);
+		if (raw == null) {
+			setter.accept(null);
+			return;
+		}
+		if (raw instanceof Map<?, ?> m) {
+			Map<String, Object> out = new HashMap<>();
+			for (Map.Entry<?, ?> e : m.entrySet()) {
+				out.put(String.valueOf(e.getKey()), e.getValue());
+			}
+			setter.accept(out);
+		}
 	}
 
 	/** Merge non-null fields from patch so JSON partial updates do not null out stored data. */
@@ -130,6 +216,10 @@ public class ProfileController {
 			target.setInterests(patch.getInterests());
 		if (patch.getPhotoUrl() != null)
 			target.setPhotoUrl(patch.getPhotoUrl());
+		if (patch.getDiscoverySettings() != null)
+			target.setDiscoverySettings(patch.getDiscoverySettings());
+		if (patch.getLifestyle() != null)
+			target.setLifestyle(patch.getLifestyle());
 	}
 	@PostMapping("/profile")
 	public ResponseEntity<?> create(

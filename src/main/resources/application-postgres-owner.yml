@@ -1,0 +1,11 @@
+# Dev-only: use when tables in DatingAppDB are owned by role "postgres" (common after manual/pgAdmin setup).
+# Hibernate ddl-auto:update then runs DDL as the owner. Do NOT use in production.
+#
+#   mvn spring-boot:run "-Dspring-boot.run.profiles=postgres-owner"
+# Or in application-local.yml (next to pom.xml): spring.profiles.active: postgres-owner
+#
+# Set SPRING_DATASOURCE_PASSWORD if your local postgres password differs from the default below.
+spring:
+  datasource:
+    username: postgres
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}

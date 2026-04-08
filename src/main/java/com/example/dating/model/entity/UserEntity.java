@@ -3,20 +3,33 @@ package com.example.dating.model.entity;
 import jakarta.persistence.*;
 import java.time.Instant;
 
+import org.hibernate.annotations.ColumnDefault;
+
 @Entity
 @Table(name = "users")
 public class UserEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	@Column(nullable = false, unique = true, length = 255)
+	@Column(unique = true, length = 255)
 	private String email;
+	@Column(name = "phone_e164", unique = true, length = 32)
+	private String phoneE164;
 	@Column(name = "password_hash", nullable = false, length = 255)
 	private String passwordHash;
 	@Column(name = "created_at")
 	private Instant createdAt;
 	@Column(name = "last_login")
 	private Instant lastLogin;
+	@Column(name = "registration_complete", nullable = false)
+	@ColumnDefault("true")
+	private boolean registrationComplete = true;
+	@Column(name = "onboarding_step", length = 40)
+	private String onboardingStep;
+	@Column(name = "tos_accepted_at")
+	private Instant tosAcceptedAt;
+	@Column(name = "privacy_accepted_at")
+	private Instant privacyAcceptedAt;
 
 	@PrePersist
 	void pre() {
@@ -38,6 +51,14 @@ public class UserEntity {
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+
+	public String getPhoneE164() {
+		return phoneE164;
+	}
+
+	public void setPhoneE164(String phoneE164) {
+		this.phoneE164 = phoneE164;
 	}
 
 	public String getPasswordHash() {
@@ -62,5 +83,37 @@ public class UserEntity {
 
 	public void setLastLogin(Instant i) {
 		this.lastLogin = i;
+	}
+
+	public boolean isRegistrationComplete() {
+		return registrationComplete;
+	}
+
+	public void setRegistrationComplete(boolean registrationComplete) {
+		this.registrationComplete = registrationComplete;
+	}
+
+	public String getOnboardingStep() {
+		return onboardingStep;
+	}
+
+	public void setOnboardingStep(String onboardingStep) {
+		this.onboardingStep = onboardingStep;
+	}
+
+	public Instant getTosAcceptedAt() {
+		return tosAcceptedAt;
+	}
+
+	public void setTosAcceptedAt(Instant tosAcceptedAt) {
+		this.tosAcceptedAt = tosAcceptedAt;
+	}
+
+	public Instant getPrivacyAcceptedAt() {
+		return privacyAcceptedAt;
+	}
+
+	public void setPrivacyAcceptedAt(Instant privacyAcceptedAt) {
+		this.privacyAcceptedAt = privacyAcceptedAt;
 	}
 }

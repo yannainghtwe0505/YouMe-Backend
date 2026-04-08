@@ -1,6 +1,5 @@
 package com.example.dating.controller;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,6 +20,8 @@ import com.example.dating.model.entity.MessageEntity;
 import com.example.dating.repository.MessageRepo;
 import com.example.dating.service.BlockService;
 import com.example.dating.service.MatchQueryService;
+import com.example.dating.service.RealtimeMessageBroadcaster;
+import com.example.dating.web.MessageViews;
 
 import jakarta.validation.constraints.NotBlank;
 
@@ -30,11 +31,14 @@ public class MessageController {
 	private final MessageRepo repo;
 	private final MatchQueryService matchQueryService;
 	private final BlockService blockService;
+	private final RealtimeMessageBroadcaster realtimeMessageBroadcaster;
 
-	public MessageController(MessageRepo repo, MatchQueryService matchQueryService, BlockService blockService) {
+	public MessageController(MessageRepo repo, MatchQueryService matchQueryService, BlockService blockService,
+			RealtimeMessageBroadcaster realtimeMessageBroadcaster) {
 		this.repo = repo;
 		this.matchQueryService = matchQueryService;
 		this.blockService = blockService;
+		this.realtimeMessageBroadcaster = realtimeMessageBroadcaster;
 	}
 
 	public static class SendReq {
@@ -55,7 +59,7 @@ public class MessageController {
 		}
 		var slice = repo.findByMatchIdOrderByCreatedAtAsc(matchId, PageRequest.of(page, 50));
 		List<Map<String, Object>> content = slice.stream()
-				.map(m -> toRow(m, userId))
+				.map(m -> MessageViews.toRow(m, userId))
 				.collect(Collectors.toList());
 		return ResponseEntity.ok(Map.of(
 				"content", content,
@@ -78,16 +82,9 @@ public class MessageController {
 		m.setMatchId(matchId);
 		m.setSenderId(userId);
 		m.setBody(req.body);
+		m.setMessageKind(MessageEntity.KIND_USER);
 		m = repo.save(m);
+		realtimeMessageBroadcaster.broadcastNewChatMessage(matchId, m);
 		return ResponseEntity.ok(Map.of("id", m.getId()));
-	}
-
-	private static Map<String, Object> toRow(MessageEntity m, Long currentUserId) {
-		Map<String, Object> row = new LinkedHashMap<>();
-		row.put("id", m.getId());
-		row.put("body", m.getBody());
-		row.put("createdAt", m.getCreatedAt());
-		row.put("isFromCurrentUser", m.getSenderId().equals(currentUserId));
-		return row;
 	}
 }

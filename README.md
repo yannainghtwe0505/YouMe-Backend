@@ -21,10 +21,20 @@ cd backend
 mvn spring-boot:run
 ```
 
+**Recommended for local work** (runs Flyway migrations; avoids broken schema after login):
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
 - **API base URL:** `http://localhost:8090` (see `server.port` in `application.yml`)
 - **OpenAPI / Swagger UI:** `http://localhost:8090/swagger-ui.html` (exact path may vary by SpringDoc version)
 
-Apply the SQL schema before first run if `ddl-auto` is `validate` (see `src/main/resources/db/migration/`). If the DB user cannot access tables, run `scripts/grant-dating-app-privileges.sql` as a superuser (see script header).
+Default config uses `spring.jpa.hibernate.ddl-auto: update` with Flyway **off** so a local DB picks up new entity columns (e.g. `messages.message_kind`). For production, set `SPRING_JPA_HIBERNATE_DDL_AUTO=validate` and run Flyway. See `src/main/resources/db/migration/`.
+
+The **`dev`** profile uses `ddl-auto: update` and keeps Flyway **off**, so local databases can catch up on missing tables/columns without table-ownership errors. If something still returns **500** after login, run SQL migrations as a superuser or enable Flyway when your DB user is allowed to run DDL.
+
+If the DB user cannot access tables, run `scripts/grant-dating-app-privileges.sql` as PostgreSQL superuser (see script header). That script includes **`CREATE` on schema `public`** so the app role can run Flyway DDL when needed.
 
 ---
 

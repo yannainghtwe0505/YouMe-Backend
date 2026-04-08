@@ -27,9 +27,10 @@ public class JwtService {
 
 	public String generate(Long userId, String email) {
 		Instant now = Instant.now();
+		String emailClaim = email != null ? email : "";
 		Map<String, Object> claims = new HashMap<>();
-		claims.put("email", email);
-		return Jwts.builder().setSubject(String.valueOf(userId)).claim("email", email).setIssuedAt(Date.from(now))
+		claims.put("email", emailClaim);
+		return Jwts.builder().setSubject(String.valueOf(userId)).claim("email", emailClaim).setIssuedAt(Date.from(now))
 				.setExpiration(Date.from(now.plusSeconds(expMinutes * 60L))).signWith(key, SignatureAlgorithm.HS256)
 				.compact();
 	}

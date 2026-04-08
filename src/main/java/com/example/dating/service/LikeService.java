@@ -8,8 +8,14 @@ import com.example.dating.repository.MatchRepo;
 import com.example.dating.repository.PassRepo;
 import com.example.dating.repository.ProfileRepo;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -36,15 +42,21 @@ public class LikeService {
 	private final PassRepo passRepo;
 	private final MatchReadStateService matchReadStateService;
 	private final BlockService blockService;
+	private final AssistantGreetingService assistantGreetingService;
+
+	@PersistenceContext
+	private EntityManager entityManager;
 
 	public LikeService(LikeRepo likeRepo, MatchRepo matchRepo, ProfileRepo profileRepo, PassRepo passRepo,
-			MatchReadStateService matchReadStateService, BlockService blockService) {
+			MatchReadStateService matchReadStateService, BlockService blockService,
+			AssistantGreetingService assistantGreetingService) {
 		this.likeRepo = likeRepo;
 		this.matchRepo = matchRepo;
 		this.profileRepo = profileRepo;
 		this.passRepo = passRepo;
 		this.matchReadStateService = matchReadStateService;
 		this.blockService = blockService;
+		this.assistantGreetingService = assistantGreetingService;
 	}
 
 	public List<Map<String, Object>> getLikesForUser(Long userId) {
@@ -122,26 +134,38 @@ public class LikeService {
 	}
 
 	private LikeOutcome saveLikeAndMaybeMatch(Long from, Long to, boolean superLike) {
-		if (from.equals(to) || blockService.eitherBlocked(from, to) || likeRepo.existsByFromUserAndToUser(from, to))
+		if (from.equals(to) || blockService.eitherBlocked(from, to))
 			return LikeOutcome.noMatch();
-		LikeEntity le = new LikeEntity();
-		le.setFromUser(from);
-		le.setToUser(to);
-		le.setSuperLike(superLike);
-		likeRepo.save(le);
+		likeRepo.insertLikeIdempotent(from, to, superLike);
 		if (likeRepo.existsByFromUserAndToUser(to, from)) {
 			Long a = Math.min(from, to), b = Math.max(from, to);
 			return matchRepo.findByUserAAndUserB(a, b)
 					.map(m -> LikeOutcome.matched(m.getId()))
-					.orElseGet(() -> {
-						MatchEntity m = new MatchEntity();
-						m.setUserA(a);
-						m.setUserB(b);
-						MatchEntity saved = matchRepo.save(m);
-						matchReadStateService.seedNewMatch(saved.getId(), a, b);
-						return LikeOutcome.matched(saved.getId());
-					});
+					.orElseGet(() -> createMatchAndSideEffects(a, b));
 		}
 		return LikeOutcome.noMatch();
+	}
+
+	private LikeOutcome createMatchAndSideEffects(Long a, Long b) {
+		try {
+			MatchEntity m = new MatchEntity();
+			m.setUserA(a);
+			m.setUserB(b);
+			MatchEntity saved = matchRepo.saveAndFlush(m);
+			matchReadStateService.seedNewMatch(saved.getId(), a, b);
+			Long newMatchId = saved.getId();
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					assistantGreetingService.trySeedAssistantGreeting(newMatchId);
+				}
+			});
+			return LikeOutcome.matched(saved.getId());
+		} catch (DataIntegrityViolationException ex) {
+			entityManager.clear();
+			return matchRepo.findByUserAAndUserB(a, b)
+					.map(match -> LikeOutcome.matched(match.getId()))
+					.orElseThrow(() -> ex);
+		}
 	}
 }

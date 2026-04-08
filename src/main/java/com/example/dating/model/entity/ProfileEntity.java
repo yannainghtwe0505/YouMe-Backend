@@ -3,6 +3,7 @@ package com.example.dating.model.entity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.hibernate.annotations.JdbcTypeCode;
 
@@ -42,6 +43,16 @@ public class ProfileEntity {
 	@Column(name = "is_premium", nullable = false)
 	@JsonProperty("isPremium")
 	private boolean premium = false;
+
+	/** Viewer-side discovery preferences (modes, filters, toggles). */
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "discovery_settings", columnDefinition = "jsonb")
+	private Map<String, Object> discoverySettings;
+
+	/** Self-reported traits used when others filter Discover (and mode visibility). */
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(columnDefinition = "jsonb")
+	private Map<String, Object> lifestyle;
 
 	public Long getUserId() {
 		return userId;
@@ -177,5 +188,21 @@ public class ProfileEntity {
 
 	public void setPremium(boolean premium) {
 		this.premium = premium;
+	}
+
+	public Map<String, Object> getDiscoverySettings() {
+		return discoverySettings;
+	}
+
+	public void setDiscoverySettings(Map<String, Object> discoverySettings) {
+		this.discoverySettings = discoverySettings;
+	}
+
+	public Map<String, Object> getLifestyle() {
+		return lifestyle;
+	}
+
+	public void setLifestyle(Map<String, Object> lifestyle) {
+		this.lifestyle = lifestyle;
 	}
 }

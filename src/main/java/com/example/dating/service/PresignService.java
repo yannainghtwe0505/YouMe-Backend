@@ -28,6 +28,9 @@ public class PresignService {
 	@Value("${app.media.presigned-put.expiration-minutes:15}")
 	private int presignedPutExpirationMinutes;
 
+	@Value("${app.media.presigned-put.enabled:true}")
+	private boolean presignedPutEnabled;
+
 	private final AwsCredentialsProvider credentialsProvider;
 	private S3Presigner presigner;
 
@@ -37,6 +40,9 @@ public class PresignService {
 
 	@PostConstruct
 	void start() {
+		if (!presignedPutEnabled) {
+			return;
+		}
 		try {
 			credentialsProvider.resolveCredentials();
 		} catch (RuntimeException e) {
@@ -60,10 +66,19 @@ public class PresignService {
 		}
 	}
 
+	/** False when presigned PUT is disabled or failed to initialize (local dev without AWS). */
+	public boolean isReady() {
+		return presignedPutEnabled && presigner != null;
+	}
+
 	public record PresignResult(URI uploadUrl, String s3Key) {
 	}
 
 	public PresignResult presignUpload(Long userId, String filename, String contentType) {
+		if (presigner == null) {
+			throw new IllegalStateException(
+					"Presigned upload is disabled. Set app.media.presigned-put.enabled=true and configure AWS credentials.");
+		}
 		String safe = filename == null || filename.isBlank() ? "photo.jpg" : filename;
 		safe = safe.replaceAll("[^a-zA-Z0-9._-]", "_");
 		String key = "uploads/" + userId + "/" + UUID.randomUUID() + "_" + safe;

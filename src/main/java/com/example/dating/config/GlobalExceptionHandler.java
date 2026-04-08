@@ -8,6 +8,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -22,6 +23,13 @@ public class GlobalExceptionHandler {
 			uri = uri.substring(ctx.length());
 		}
 		return uri.startsWith("/auth/");
+	}
+
+	@ExceptionHandler(ResponseStatusException.class)
+	public ResponseEntity<Map<String, String>> handleResponseStatus(ResponseStatusException ex) {
+		int code = ex.getStatusCode().value();
+		String reason = ex.getReason() != null ? ex.getReason() : "Request failed";
+		return ResponseEntity.status(code).body(Map.of("error", reason));
 	}
 
 	@ExceptionHandler(DataAccessException.class)

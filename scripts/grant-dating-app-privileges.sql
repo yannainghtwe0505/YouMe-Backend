@@ -8,13 +8,13 @@
 -- Use the block below first (unquoted name). If your role was created with quotes, use the second block.
 
 -- === Option A (most common): unquoted role → matches datingappdb ===
-GRANT USAGE ON SCHEMA public TO DatingAppDB;
+GRANT USAGE, CREATE ON SCHEMA public TO DatingAppDB;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO DatingAppDB;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO DatingAppDB;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO DatingAppDB;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO DatingAppDB;
 
 -- === Option B: only if Option A errors with "role datingappdb does not exist" ===
--- GRANT USAGE ON SCHEMA public TO "DatingAppDB";
+-- GRANT USAGE, CREATE ON SCHEMA public TO "DatingAppDB";
 -- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "DatingAppDB";
 -- GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO "DatingAppDB";

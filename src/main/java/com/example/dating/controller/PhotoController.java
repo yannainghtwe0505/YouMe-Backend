@@ -75,6 +75,11 @@ public class PhotoController {
 		if (photoRepo.countByUserId(userId) >= MAX_PHOTOS_PER_USER) {
 			return ResponseEntity.badRequest().body(Map.of("error", "Maximum " + MAX_PHOTOS_PER_USER + " photos"));
 		}
+		if (!presign.isReady()) {
+			return ResponseEntity.status(503).body(Map.of(
+					"error",
+					"Photo upload is not configured. Enable app.media.presigned-put and set AWS credentials (see application-local.example.yml)."));
+		}
 		var result = presign.presignUpload(userId, filename, contentType);
 		return ResponseEntity.ok(Map.of(
 				"uploadUrl", result.uploadUrl().toString(),

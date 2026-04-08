@@ -16,7 +16,7 @@ import software.amazon.awssdk.auth.credentials.SystemPropertyCredentialsProvider
 @Configuration
 public class AwsCredentialsProviderConfig {
 
-	@Bean
+	@Bean(destroyMethod = "")
 	public AwsCredentialsProvider awsCredentialsProvider(
 			@Value("${app.s3.access-key-id:}") String accessKeyId,
 			@Value("${app.s3.secret-access-key:}") String secretAccessKey) {
