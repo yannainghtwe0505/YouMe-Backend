@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RegistrationProfilePatch {
 	public String onboardingStep;
+	/** Optional account email during phone-based onboarding (normalized server-side). */
+	public String email;
 	public String gender;
 	public String birthday;
 	public String city;

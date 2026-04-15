@@ -30,6 +30,8 @@ public class UserEntity {
 	private Instant tosAcceptedAt;
 	@Column(name = "privacy_accepted_at")
 	private Instant privacyAcceptedAt;
+	@Column(length = 12)
+	private String locale;
 
 	@PrePersist
 	void pre() {
@@ -115,5 +117,13 @@ public class UserEntity {
 
 	public void setPrivacyAcceptedAt(Instant privacyAcceptedAt) {
 		this.privacyAcceptedAt = privacyAcceptedAt;
+	}
+
+	public String getLocale() {
+		return locale;
+	}
+
+	public void setLocale(String locale) {
+		this.locale = locale;
 	}
 }

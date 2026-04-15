@@ -82,7 +82,10 @@ public class SecurityConfig {
 				.requestMatchers(HttpMethod.POST, "/auth/registration/email/send", "/auth/registration/email/verify",
 						"/auth/registration/phone/send", "/auth/registration/phone/verify",
 						"/auth/registration/password").permitAll()
-				.requestMatchers(HttpMethod.GET, "/ai/capabilities").permitAll()
+				.requestMatchers(HttpMethod.GET, "/ai/capabilities", "/ai/plans").permitAll()
+				.requestMatchers(HttpMethod.GET, "/subscription/plans").permitAll()
+				.requestMatchers(HttpMethod.POST, "/subscription/webhook").permitAll()
+				.requestMatchers(HttpMethod.POST, "/webhooks/stripe", "/webhooks/apple", "/webhooks/google").permitAll()
 				.requestMatchers("/ws/chat").permitAll()
 				.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 				.anyRequest().authenticated());

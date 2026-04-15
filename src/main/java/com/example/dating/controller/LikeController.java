@@ -27,11 +27,14 @@ public class LikeController {
 		return ResponseEntity.ok(likes);
 	}
 
-	/** People who liked you; you have not liked back yet (classic "Likes you" queue). */
+	/**
+	 * People who liked you (subscription-gated). Free: {@code likes_count}, {@code locked}, {@code placeholders}
+	 * only — no liker identities. Plus/Gold: {@code likes} with full rows.
+	 */
 	@GetMapping("/inbound")
-	public ResponseEntity<List<Map<String, Object>>> getInboundLikes(@AuthenticationPrincipal User me) {
+	public ResponseEntity<Map<String, Object>> getInboundLikes(@AuthenticationPrincipal User me) {
 		Long userId = Long.valueOf(me.getUsername());
-		return ResponseEntity.ok(svc.getInboundLikesForUser(userId));
+		return ResponseEntity.ok(svc.getInboundLikesPayloadForViewer(userId));
 	}
 
 	@PostMapping("/{toUserId}")

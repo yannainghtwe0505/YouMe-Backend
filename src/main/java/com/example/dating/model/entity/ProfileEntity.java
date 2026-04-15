@@ -44,6 +44,16 @@ public class ProfileEntity {
 	@JsonProperty("isPremium")
 	private boolean premium = false;
 
+	/** FREE | PLUS | GOLD — drives AI depth and quotas (see SubscriptionPlan). */
+	@Column(name = "subscription_plan", length = 20, nullable = false)
+	private String subscriptionPlan = "FREE";
+
+	@Column(name = "stripe_customer_id", length = 64)
+	private String stripeCustomerId;
+
+	@Column(name = "stripe_subscription_id", length = 64)
+	private String stripeSubscriptionId;
+
 	/** Viewer-side discovery preferences (modes, filters, toggles). */
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column(name = "discovery_settings", columnDefinition = "jsonb")
@@ -188,6 +198,30 @@ public class ProfileEntity {
 
 	public void setPremium(boolean premium) {
 		this.premium = premium;
+	}
+
+	public String getSubscriptionPlan() {
+		return subscriptionPlan;
+	}
+
+	public void setSubscriptionPlan(String subscriptionPlan) {
+		this.subscriptionPlan = subscriptionPlan == null || subscriptionPlan.isBlank() ? "FREE" : subscriptionPlan;
+	}
+
+	public String getStripeCustomerId() {
+		return stripeCustomerId;
+	}
+
+	public void setStripeCustomerId(String stripeCustomerId) {
+		this.stripeCustomerId = stripeCustomerId;
+	}
+
+	public String getStripeSubscriptionId() {
+		return stripeSubscriptionId;
+	}
+
+	public void setStripeSubscriptionId(String stripeSubscriptionId) {
+		this.stripeSubscriptionId = stripeSubscriptionId;
 	}
 
 	public Map<String, Object> getDiscoverySettings() {

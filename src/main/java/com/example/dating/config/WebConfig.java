@@ -15,10 +15,20 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class WebConfig {
 
+	private final AppUrlsProperties appUrlsProperties;
+
+	public WebConfig(AppUrlsProperties appUrlsProperties) {
+		this.appUrlsProperties = appUrlsProperties;
+	}
+
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowedOriginPatterns(List.of("*"));
+		List<String> patterns = appUrlsProperties.corsAllowedOriginPatternsList();
+		if (patterns.isEmpty()) {
+			patterns = List.of("*");
+		}
+		config.setAllowedOriginPatterns(patterns);
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("*"));
 		config.setExposedHeaders(List.of("Authorization"));

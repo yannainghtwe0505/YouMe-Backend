@@ -27,14 +27,16 @@ public class MatchQueryService {
 	private final MessageRepo messageRepo;
 	private final MatchReadStateRepo readStateRepo;
 	private final BlockService blockService;
+	private final ProfileAvatarService profileAvatarService;
 
 	public MatchQueryService(MatchRepo matchRepo, ProfileRepo profileRepo, MessageRepo messageRepo,
-			MatchReadStateRepo readStateRepo, BlockService blockService) {
+			MatchReadStateRepo readStateRepo, BlockService blockService, ProfileAvatarService profileAvatarService) {
 		this.matchRepo = matchRepo;
 		this.profileRepo = profileRepo;
 		this.messageRepo = messageRepo;
 		this.readStateRepo = readStateRepo;
 		this.blockService = blockService;
+		this.profileAvatarService = profileAvatarService;
 	}
 
 	public List<Map<String, Object>> listMatchesForUser(Long userId) {
@@ -74,7 +76,7 @@ public class MatchQueryService {
 		ProfileEntity peer = profileRepo.findById(peerId).orElse(null);
 		if (peer != null) {
 			row.put("peerName", peer.getDisplayName() != null ? peer.getDisplayName() : "User " + peerId);
-			row.put("peerAvatar", peer.getPhotoUrl());
+			row.put("peerAvatar", profileAvatarService.resolveAvatarUrl(peerId, peer));
 		} else {
 			row.put("peerName", "User " + peerId);
 			row.put("peerAvatar", null);

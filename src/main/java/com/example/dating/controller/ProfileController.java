@@ -20,13 +20,20 @@ import org.springframework.validation.annotation.Validated;
 import java.util.List;
 
 import com.example.dating.config.MediaUrls;
+import com.example.dating.dto.AiQuotaView;
 import com.example.dating.dto.ChangePasswordRequest;
 import com.example.dating.dto.MeResponse;
 import com.example.dating.model.entity.ProfileEntity;
 import com.example.dating.repository.PhotoRepo;
 import com.example.dating.repository.ProfileRepo;
 import com.example.dating.repository.UserRepo;
+import com.example.dating.model.subscription.AiFeature;
+import com.example.dating.service.AiCoachService;
 import com.example.dating.service.OnboardingRegistrationService;
+import com.example.dating.service.ProfileAvatarService;
+import com.example.dating.service.SubscriptionPlanService;
+import com.example.dating.service.TieredAiUsageService;
+import com.example.dating.service.UserSubscriptionService;
 
 import com.example.dating.model.entity.UserEntity;
 
@@ -42,15 +49,27 @@ public class ProfileController {
 	private final MediaUrls mediaUrls;
 	private final PasswordEncoder passwordEncoder;
 	private final OnboardingRegistrationService onboarding;
+	private final AiCoachService aiCoachService;
+	private final TieredAiUsageService tieredAiUsageService;
+	private final SubscriptionPlanService subscriptionPlanService;
+	private final UserSubscriptionService userSubscriptionService;
+	private final ProfileAvatarService profileAvatarService;
 
 	public ProfileController(ProfileRepo repo, UserRepo users, PhotoRepo photoRepo, MediaUrls mediaUrls,
-			PasswordEncoder passwordEncoder, OnboardingRegistrationService onboarding) {
+			PasswordEncoder passwordEncoder, OnboardingRegistrationService onboarding, AiCoachService aiCoachService,
+			TieredAiUsageService tieredAiUsageService, SubscriptionPlanService subscriptionPlanService,
+			UserSubscriptionService userSubscriptionService, ProfileAvatarService profileAvatarService) {
 		this.repo = repo;
 		this.users = users;
 		this.photoRepo = photoRepo;
 		this.mediaUrls = mediaUrls;
 		this.passwordEncoder = passwordEncoder;
 		this.onboarding = onboarding;
+		this.aiCoachService = aiCoachService;
+		this.tieredAiUsageService = tieredAiUsageService;
+		this.subscriptionPlanService = subscriptionPlanService;
+		this.userSubscriptionService = userSubscriptionService;
+		this.profileAvatarService = profileAvatarService;
 	}
 
 	@PutMapping("/password")
@@ -95,7 +114,75 @@ public class ProfileController {
 				.filter(u -> u != null)
 				.limit(6)
 				.toList();
-		return ResponseEntity.ok(MeResponse.from(user, profile, photoUrls));
+		var plan = subscriptionPlanService.resolve(profile);
+		AiQuotaView chatQuota = tieredAiUsageService.status(id, plan, AiFeature.CHAT_REPLY);
+		var entitlements = tieredAiUsageService.entitlementsMap(id, plan);
+		String resolvedAvatar = profileAvatarService.resolveAvatarUrl(id, profile);
+		return ResponseEntity.ok(
+				MeResponse.from(user, profile, photoUrls, resolvedAvatar, chatQuota, plan.name(), entitlements));
+	}
+
+	public static class LocaleBody {
+		public String locale;
+	}
+
+	@PutMapping("/locale")
+	public ResponseEntity<?> setLocale(@AuthenticationPrincipal User me, @RequestBody LocaleBody body) {
+		if (body == null || body.locale == null || body.locale.isBlank()) {
+			return ResponseEntity.badRequest().body(Map.of("error", "locale is required"));
+		}
+		String lc = body.locale.trim().toLowerCase();
+		if (!"en".equals(lc) && !"ja".equals(lc) && !"my".equals(lc)) {
+			return ResponseEntity.badRequest().body(Map.of("error", "locale must be en, ja, or my"));
+		}
+		Long id = Long.valueOf(me.getUsername());
+		UserEntity u = users.findById(id).orElse(null);
+		if (u == null) {
+			return ResponseEntity.notFound().build();
+		}
+		u.setLocale(lc);
+		users.save(u);
+		return ResponseEntity.ok(Map.of("locale", lc));
+	}
+
+	@PostMapping("/assistant/profile-tips")
+	public ResponseEntity<?> profileTips(@AuthenticationPrincipal User me,
+			@RequestBody(required = false) Map<String, Object> body) {
+		String sub = me.getUsername();
+		if (sub.startsWith("pending:")) {
+			return ResponseEntity.status(403).body(Map.of("error", "Finish sign-up before using this."));
+		}
+		Long userId = Long.valueOf(sub);
+		ProfileEntity profile = repo.findById(userId).orElseThrow();
+		UserEntity user = users.findById(userId).orElseThrow();
+		boolean llm = aiCoachService.meta().llmConfigured();
+		String lang = user.getLocale();
+		if (body != null && body.get("locale") instanceof String s && !s.isBlank()) {
+			lang = s.trim();
+		}
+		if (lang == null || lang.isBlank()) {
+			lang = "en";
+		}
+		var plan = subscriptionPlanService.resolve(profile);
+		if (llm) {
+			tieredAiUsageService.assertCanUse(userId, plan, AiFeature.PROFILE_AI);
+		}
+		int photoCount = (int) Math.min(Integer.MAX_VALUE, photoRepo.countByUserId(userId));
+		var tips = aiCoachService.profileImprovementTips(lang, profile, photoCount, plan);
+		if (llm) {
+			tieredAiUsageService.recordUse(userId, AiFeature.PROFILE_AI);
+		}
+		AiQuotaView q = tieredAiUsageService.status(userId, plan, AiFeature.PROFILE_AI);
+		return ResponseEntity.ok(Map.of(
+				"tips", tips,
+				"llmConfigured", llm,
+				"subscriptionPlan", plan.name(),
+				"aiQuota", Map.of(
+						"usedToday", q.usedToday(),
+						"dailyLimit", q.dailyLimit(),
+						"remaining", q.remaining(),
+						"fairUseCap", q.fairUseCap()),
+				"aiEntitlements", tieredAiUsageService.entitlementsMap(userId, plan)));
 	}
 
 	@PutMapping("/profile")
@@ -235,14 +322,31 @@ public class ProfileController {
 	    return ResponseEntity.ok(repo.save(body));
 	}
 
+	public static class UpgradeBody {
+		/** Optional: PLUS (default) or GOLD — demo billing hook. */
+		public String plan;
+	}
+
 	@PostMapping("/upgrade")
-	public ResponseEntity<?> upgrade(@AuthenticationPrincipal User me) {
+	public ResponseEntity<?> upgrade(@AuthenticationPrincipal User me, @RequestBody(required = false) UpgradeBody body) {
 		Long id = Long.valueOf(me.getUsername());
-		return repo.findById(id).map(p -> {
-			p.setPremium(true);
-			repo.save(p);
-			return ResponseEntity.ok(Map.of("isPremium", true));
-		}).orElse(ResponseEntity.notFound().build());
+		ProfileEntity p = repo.findById(id).orElse(null);
+		if (p == null)
+			return ResponseEntity.notFound().build();
+		com.example.dating.model.subscription.SubscriptionPlan target = com.example.dating.model.subscription.SubscriptionPlan.PLUS;
+		if (body != null && body.plan != null && !body.plan.isBlank()) {
+			try {
+				target = com.example.dating.model.subscription.SubscriptionPlan
+						.valueOf(body.plan.trim().toUpperCase(java.util.Locale.ROOT));
+			} catch (IllegalArgumentException e) {
+				return ResponseEntity.badRequest().body(Map.of("error", "plan must be PLUS or GOLD"));
+			}
+		}
+		userSubscriptionService.applyDevDemoPlan(id, target);
+		ProfileEntity refreshed = repo.findById(id).orElse(p);
+		return ResponseEntity.ok(Map.of(
+				"isPremium", refreshed.isPremium(),
+				"subscriptionPlan", target.name()));
 	}
 
 }

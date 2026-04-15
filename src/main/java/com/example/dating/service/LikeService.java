@@ -3,6 +3,8 @@ package com.example.dating.service;
 
 import com.example.dating.model.entity.LikeEntity;
 import com.example.dating.model.entity.MatchEntity;
+import com.example.dating.model.entity.ProfileEntity;
+import com.example.dating.model.subscription.SubscriptionPlan;
 import com.example.dating.repository.LikeRepo;
 import com.example.dating.repository.MatchRepo;
 import com.example.dating.repository.PassRepo;
@@ -19,8 +21,10 @@ import jakarta.persistence.PersistenceContext;
 
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -43,13 +47,16 @@ public class LikeService {
 	private final MatchReadStateService matchReadStateService;
 	private final BlockService blockService;
 	private final AssistantGreetingService assistantGreetingService;
+	private final ProfileAvatarService profileAvatarService;
+	private final SubscriptionPlanService subscriptionPlanService;
 
 	@PersistenceContext
 	private EntityManager entityManager;
 
 	public LikeService(LikeRepo likeRepo, MatchRepo matchRepo, ProfileRepo profileRepo, PassRepo passRepo,
 			MatchReadStateService matchReadStateService, BlockService blockService,
-			AssistantGreetingService assistantGreetingService) {
+			AssistantGreetingService assistantGreetingService, ProfileAvatarService profileAvatarService,
+			SubscriptionPlanService subscriptionPlanService) {
 		this.likeRepo = likeRepo;
 		this.matchRepo = matchRepo;
 		this.profileRepo = profileRepo;
@@ -57,6 +64,8 @@ public class LikeService {
 		this.matchReadStateService = matchReadStateService;
 		this.blockService = blockService;
 		this.assistantGreetingService = assistantGreetingService;
+		this.profileAvatarService = profileAvatarService;
+		this.subscriptionPlanService = subscriptionPlanService;
 	}
 
 	public List<Map<String, Object>> getLikesForUser(Long userId) {
@@ -75,7 +84,7 @@ public class LikeService {
 				String name = profile
 						.map(p -> p.getDisplayName() != null ? p.getDisplayName() : "Member")
 						.orElse("Member");
-				String avatar = profile.map(p -> p.getPhotoUrl()).orElse(null);
+				String avatar = profileAvatarService.resolveAvatarUrl(otherUserId, profile.orElse(null));
 				Map<String, Object> likeData = new HashMap<>();
 				likeData.put("id", like.getId());
 				likeData.put("toUserId", otherUserId);
@@ -108,7 +117,7 @@ public class LikeService {
 					String name = profile
 							.map(p -> p.getDisplayName() != null ? p.getDisplayName() : "Member")
 							.orElse("Member");
-					String avatar = profile.map(p -> p.getPhotoUrl()).orElse(null);
+					String avatar = profileAvatarService.resolveAvatarUrl(fromId, profile.orElse(null));
 					Map<String, Object> row = new HashMap<>();
 					row.put("id", like.getId());
 					row.put("fromUserId", fromId);
@@ -121,6 +130,44 @@ public class LikeService {
 				.sorted(Comparator.comparing(m -> (Instant) m.get("createdAt"),
 						Comparator.nullsLast(Comparator.reverseOrder())))
 				.collect(Collectors.toList());
+	}
+
+	/**
+	 * Same eligibility rules as {@link #getInboundLikesForUser} but no profile data — safe for Free-tier counts.
+	 */
+	public long countInboundLikesForUser(Long userId) {
+		return likeRepo.findByToUser(userId).stream()
+				.filter(like -> !blockService.eitherBlocked(userId, like.getFromUser()))
+				.filter(like -> !likeRepo.existsByFromUserAndToUser(userId, like.getFromUser()))
+				.filter(like -> !passRepo.existsByFromUserAndToUser(userId, like.getFromUser()))
+				.count();
+	}
+
+	/**
+	 * Subscription-gated inbound likes: Free users receive only count + non-identifying placeholders (no names,
+	 * photos, or ids). Plus/Gold receive the full roster.
+	 */
+	public Map<String, Object> getInboundLikesPayloadForViewer(Long userId) {
+		ProfileEntity profile = profileRepo.findById(userId).orElse(null);
+		SubscriptionPlan plan = subscriptionPlanService.resolve(profile);
+		long count = countInboundLikesForUser(userId);
+		Map<String, Object> out = new HashMap<>();
+		out.put("plan", plan.name().toLowerCase(Locale.ROOT));
+		out.put("likes_count", count);
+		boolean locked = plan == SubscriptionPlan.FREE;
+		out.put("locked", locked);
+		if (locked) {
+			int slots = (int) Math.min(count, 24);
+			List<Map<String, Integer>> placeholders = new ArrayList<>(slots);
+			for (int i = 0; i < slots; i++)
+				placeholders.add(Map.of("slot", i));
+			out.put("placeholders", placeholders);
+			return out;
+		}
+		out.put("likes", getInboundLikesForUser(userId));
+		if (plan == SubscriptionPlan.GOLD)
+			out.put("gold_features", Map.of("priorityLikesTeaser", true));
+		return out;
 	}
 
 	@Transactional
@@ -141,12 +188,12 @@ public class LikeService {
 			Long a = Math.min(from, to), b = Math.max(from, to);
 			return matchRepo.findByUserAAndUserB(a, b)
 					.map(m -> LikeOutcome.matched(m.getId()))
-					.orElseGet(() -> createMatchAndSideEffects(a, b));
+					.orElseGet(() -> createMatchAndSideEffects(a, b, from));
 		}
 		return LikeOutcome.noMatch();
 	}
 
-	private LikeOutcome createMatchAndSideEffects(Long a, Long b) {
+	private LikeOutcome createMatchAndSideEffects(Long a, Long b, Long actingUserId) {
 		try {
 			MatchEntity m = new MatchEntity();
 			m.setUserA(a);
@@ -157,7 +204,7 @@ public class LikeService {
 			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 				@Override
 				public void afterCommit() {
-					assistantGreetingService.trySeedAssistantGreeting(newMatchId);
+					assistantGreetingService.trySeedAssistantGreeting(newMatchId, actingUserId);
 				}
 			});
 			return LikeOutcome.matched(saved.getId());

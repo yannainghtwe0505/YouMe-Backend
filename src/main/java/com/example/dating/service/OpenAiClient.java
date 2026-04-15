@@ -26,14 +26,24 @@ public class OpenAiClient {
 	}
 
 	public String chatCompletion(String systemPrompt, String userPrompt) throws Exception {
+		return chatCompletion(systemPrompt, userPrompt, 220, 0.85);
+	}
+
+	public String chatCompletion(String systemPrompt, String userPrompt, int maxTokens) throws Exception {
+		return chatCompletion(systemPrompt, userPrompt, maxTokens, 0.85);
+	}
+
+	public String chatCompletion(String systemPrompt, String userPrompt, int maxTokens, double temperature)
+			throws Exception {
 		if (!props.isEnabled() || !props.hasApiKey())
 			return null;
 		String base = props.getBaseUrl().replaceAll("/+$", "");
 		URI uri = URI.create(base + "/chat/completions");
+		double t = Math.max(0, Math.min(2, temperature));
 		Map<String, Object> body = Map.of(
 				"model", props.getModel(),
-				"temperature", 0.85,
-				"max_tokens", 220,
+				"temperature", t,
+				"max_tokens", Math.max(32, Math.min(4096, maxTokens)),
 				"messages", List.of(
 						Map.of("role", "system", "content", systemPrompt),
 						Map.of("role", "user", "content", userPrompt)));

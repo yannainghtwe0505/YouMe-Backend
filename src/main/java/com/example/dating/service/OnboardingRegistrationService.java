@@ -78,20 +78,35 @@ public class OnboardingRegistrationService {
 		return s.isEmpty() ? null : s;
 	}
 
-	/** JP mobile-style input to E.164 (+81...). */
+	/**
+	 * JP mobile-style input to E.164 (+81...). Strips spaces, hyphens, parentheses, etc., so pasted formats like
+	 * {@code (090) 1234-5678} match the same key as {@code 090-1234-5678}.
+	 */
 	public static String normalizeJpPhone(String raw) {
 		if (raw == null)
 			return null;
-		String s = raw.replaceAll("[\\s-]", "");
-		if (s.isEmpty())
+		String t = raw.trim();
+		if (t.isEmpty())
 			return null;
-		if (s.startsWith("+81"))
-			return s;
-		if (s.startsWith("0"))
-			return "+81" + s.substring(1);
-		if (s.startsWith("81") && s.length() >= 10)
-			return "+" + s;
-		return "+81" + s;
+		StringBuilder digits = new StringBuilder();
+		for (int i = 0; i < t.length(); i++) {
+			char c = t.charAt(i);
+			if (c >= '0' && c <= '9')
+				digits.append(c);
+		}
+		String d = digits.toString();
+		if (d.isEmpty())
+			return null;
+		// +81 + national (no leading 0), e.g. 819012345678
+		if (d.startsWith("81") && d.length() >= 11)
+			return "+" + d;
+		// Domestic with leading 0, e.g. 09012345678
+		if (d.startsWith("0") && d.length() >= 10)
+			return "+81" + d.substring(1);
+		// 9-10 digit mobile without leading 0, e.g. 9012345678
+		if (d.length() >= 9 && d.length() <= 10)
+			return "+81" + d;
+		return "+81" + d;
 	}
 
 	private String randomDigits(int n) {
@@ -144,7 +159,7 @@ public class OnboardingRegistrationService {
 	}
 
 	@Transactional
-	public void sendPhoneCode(String rawPhone) {
+	public void sendPhoneCode(String rawPhone, String rawOptionalEmail) {
 		String phone = normalizeJpPhone(rawPhone);
 		if (phone == null || phone.length() < 12) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid Japan phone number is required");
@@ -152,12 +167,21 @@ public class OnboardingRegistrationService {
 		if (users.findByPhoneE164(phone).isPresent()) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "This phone number is already registered");
 		}
+		String optEmail = normalizeEmail(rawOptionalEmail);
+		if (optEmail != null) {
+			if (!optEmail.contains("@")) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email address");
+			}
+			if (users.findByEmail(optEmail).isPresent()) {
+				throw new ResponseStatusException(HttpStatus.CONFLICT, "This email is already registered");
+			}
+		}
 		String code = randomDigits(6);
 		String hash = passwordEncoder.encode(code);
 		Instant exp = Instant.now().plus(CODE_TTL_MINUTES, ChronoUnit.MINUTES);
 		PendingRegistrationEntity row = pendingRepo.findByPhoneE164(phone).orElseGet(PendingRegistrationEntity::new);
-		row.setEmail(null);
 		row.setPhoneE164(phone);
+		row.setEmail(optEmail);
 		row.setChannel(CHANNEL_PHONE);
 		row.setCodeHash(hash);
 		row.setExpiresAt(exp);
@@ -324,6 +348,20 @@ public class OnboardingRegistrationService {
 		if (patch.onboardingStep != null && !patch.onboardingStep.isBlank()) {
 			row.setOnboardingStep(patch.onboardingStep.trim());
 		}
+		if (patch.email != null && CHANNEL_PHONE.equals(row.getChannel())) {
+			String em = normalizeEmail(patch.email);
+			if (em == null) {
+				row.setEmail(null);
+			} else {
+				if (!em.contains("@")) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email address");
+				}
+				if (users.findByEmail(em).isPresent()) {
+					throw new ResponseStatusException(HttpStatus.CONFLICT, "This email is already registered");
+				}
+				row.setEmail(em);
+			}
+		}
 
 		row.setProfileDraft(draft);
 		pendingRepo.save(row);
@@ -468,6 +506,22 @@ public class OnboardingRegistrationService {
 		if (patch.onboardingStep != null && !patch.onboardingStep.isBlank()) {
 			user.setOnboardingStep(patch.onboardingStep.trim());
 		}
+		if (patch.email != null && user.getPhoneE164() != null) {
+			String em = normalizeEmail(patch.email);
+			if (em == null) {
+				user.setEmail(null);
+			} else {
+				if (!em.contains("@")) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email address");
+				}
+				users.findByEmail(em).ifPresent(other -> {
+					if (!other.getId().equals(userId)) {
+						throw new ResponseStatusException(HttpStatus.CONFLICT, "This email is already registered");
+					}
+				});
+				user.setEmail(em);
+			}
+		}
 
 		users.save(user);
 		profiles.save(profile);
@@ -526,8 +580,8 @@ public class OnboardingRegistrationService {
 		if (CHANNEL_EMAIL.equals(row.getChannel())) {
 			u.setEmail(row.getEmail());
 		} else {
-			u.setEmail(null);
 			u.setPhoneE164(row.getPhoneE164());
+			u.setEmail(row.getEmail());
 		}
 		u.setPasswordHash(row.getPasswordHash());
 		u.setRegistrationComplete(false);
@@ -656,6 +710,9 @@ public class OnboardingRegistrationService {
 		out.put("lifestyle", profile.getLifestyle());
 		out.put("tosAccepted", user.getTosAcceptedAt() != null);
 		out.put("privacyAccepted", user.getPrivacyAcceptedAt() != null);
+		out.put("phoneE164", user.getPhoneE164());
+		out.put("accountEmail", user.getEmail());
+		out.put("verificationChannel", user.getPhoneE164() != null ? CHANNEL_PHONE : CHANNEL_EMAIL);
 		return out;
 	}
 
@@ -675,6 +732,9 @@ public class OnboardingRegistrationService {
 		out.put("lifestyle", p.getLifestyle());
 		out.put("tosAccepted", row.getTosAcceptedAt() != null);
 		out.put("privacyAccepted", row.getPrivacyAcceptedAt() != null);
+		out.put("verificationChannel", row.getChannel());
+		out.put("accountEmail", row.getEmail());
+		out.put("phoneE164", row.getPhoneE164());
 		return out;
 	}
 

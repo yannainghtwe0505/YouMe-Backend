@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.dating.dto.RegistrationProfilePatch;
 import com.example.dating.service.OnboardingRegistrationService;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
 @RestController
@@ -51,6 +52,8 @@ public class RegistrationController {
 	public static class PhoneSendReq {
 		@NotBlank
 		public String phone;
+		/** Optional; saved on the account when sign-up completes (not used for SMS). */
+		public String email;
 	}
 
 	public static class PhoneVerifyReq {
@@ -68,7 +71,7 @@ public class RegistrationController {
 	}
 
 	@PostMapping("/email/send")
-	public ResponseEntity<?> emailSend(@RequestBody EmailSendReq req) {
+	public ResponseEntity<?> emailSend(@Valid @RequestBody EmailSendReq req) {
 		log.info("POST /auth/registration/email/send (email suffix ...@{})",
 				req.email != null && req.email.contains("@") ? req.email.substring(req.email.indexOf('@')) : "?");
 		onboarding.sendEmailCode(req.email);
@@ -76,24 +79,24 @@ public class RegistrationController {
 	}
 
 	@PostMapping("/email/verify")
-	public ResponseEntity<?> emailVerify(@RequestBody EmailVerifyReq req) {
+	public ResponseEntity<?> emailVerify(@Valid @RequestBody EmailVerifyReq req) {
 		return ResponseEntity.ok(onboarding.verifyEmailCode(req.email, req.code));
 	}
 
 	@PostMapping("/phone/send")
-	public ResponseEntity<?> phoneSend(@RequestBody PhoneSendReq req) {
+	public ResponseEntity<?> phoneSend(@Valid @RequestBody PhoneSendReq req) {
 		log.info("POST /auth/registration/phone/send");
-		onboarding.sendPhoneCode(req.phone);
+		onboarding.sendPhoneCode(req.phone, req.email);
 		return ResponseEntity.ok(Map.of("ok", true, "message", "If an account can be created, a code was sent."));
 	}
 
 	@PostMapping("/phone/verify")
-	public ResponseEntity<?> phoneVerify(@RequestBody PhoneVerifyReq req) {
+	public ResponseEntity<?> phoneVerify(@Valid @RequestBody PhoneVerifyReq req) {
 		return ResponseEntity.ok(onboarding.verifyPhoneCode(req.phone, req.code));
 	}
 
 	@PostMapping("/password")
-	public ResponseEntity<?> createPassword(@RequestBody PasswordCreateReq req) {
+	public ResponseEntity<?> createPassword(@Valid @RequestBody PasswordCreateReq req) {
 		return ResponseEntity.ok(onboarding.createAccountWithPassword(req.pendingSessionToken, req.password));
 	}
 

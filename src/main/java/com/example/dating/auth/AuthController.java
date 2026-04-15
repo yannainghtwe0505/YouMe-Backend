@@ -71,7 +71,7 @@ public class AuthController {
 				u = users.findByEmail(em).orElse(null);
 		}
 		if (u == null && req.phone != null && !req.phone.isBlank()) {
-			String ph = OnboardingRegistrationService.normalizeJpPhone(req.phone);
+			String ph = OnboardingRegistrationService.normalizeJpPhone(req.phone.trim());
 			if (ph != null)
 				u = users.findByPhoneE164(ph).orElse(null);
 		}

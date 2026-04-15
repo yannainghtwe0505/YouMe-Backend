@@ -2,6 +2,7 @@ package com.example.dating.dto;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,14 +34,26 @@ public record MeResponse(
 		Map<String, Object> discoverySettings,
 		Map<String, Object> lifestyle,
 		Integer minAge,
-		Integer maxAge) {
+		Integer maxAge,
+		String gender,
+		LocalDate birthday,
+		List<String> interests,
+		String locale,
+		AiQuotaView aiQuota,
+		String subscriptionPlan,
+		Map<String, Object> aiEntitlements) {
 
-	public static MeResponse from(UserEntity user, ProfileEntity p, List<String> photoUrls) {
+	public static MeResponse from(UserEntity user, ProfileEntity p, List<String> photoUrls, String resolvedAvatar,
+			AiQuotaView aiQuota, String subscriptionPlan, Map<String, Object> aiEntitlements) {
 		Integer age = null;
 		if (p.getBirthday() != null)
 			age = Period.between(p.getBirthday(), LocalDate.now()).getYears();
 		String dist = p.getDistanceKm() != null ? String.valueOf(p.getDistanceKm()) : null;
 		List<String> photos = photoUrls == null ? List.of() : List.copyOf(photoUrls);
+		List<String> interests = p.getInterests() == null ? List.of() : List.copyOf(p.getInterests());
+		String loc = user.getLocale();
+		if (loc == null || loc.isBlank())
+			loc = "en";
 		return new MeResponse(
 				user.getId(),
 				user.getEmail(),
@@ -57,25 +70,43 @@ public record MeResponse(
 				p.getOccupation(),
 				p.getHobbies(),
 				p.isPremium(),
-				p.getPhotoUrl(),
+				resolvedAvatar != null ? resolvedAvatar : p.getPhotoUrl(),
 				p.getLatitude(),
 				p.getLongitude(),
 				photos,
 				p.getDiscoverySettings(),
 				p.getLifestyle(),
 				p.getMinAge(),
-				p.getMaxAge());
+				p.getMaxAge(),
+				p.getGender(),
+				p.getBirthday(),
+				interests,
+				loc,
+				aiQuota,
+				subscriptionPlan,
+				aiEntitlements);
 	}
 
 	public static MeResponse fromPending(PendingRegistrationEntity row, Map<String, Object> draft) {
 		String displayName = null;
+		String bio = null;
+		String gender = null;
 		LocalDate birthday = null;
 		String city = null;
+		List<String> interests = null;
 		Map<String, Object> lifestyle = null;
 		if (draft != null && !draft.isEmpty()) {
 			Object dn = draft.get("displayName");
 			if (dn != null && !String.valueOf(dn).isBlank()) {
 				displayName = String.valueOf(dn).trim();
+			}
+			Object bioRaw = draft.get("bio");
+			if (bioRaw != null && !String.valueOf(bioRaw).isBlank()) {
+				bio = String.valueOf(bioRaw).trim();
+			}
+			Object g = draft.get("gender");
+			if (g != null && !String.valueOf(g).isBlank()) {
+				gender = String.valueOf(g).trim();
 			}
 			Object bd = draft.get("birthday");
 			if (bd != null && !String.valueOf(bd).isBlank()) {
@@ -89,6 +120,16 @@ public record MeResponse(
 			if (c != null && !String.valueOf(c).isBlank()) {
 				city = String.valueOf(c).trim();
 			}
+			Object intr = draft.get("interests");
+			if (intr instanceof List<?> list) {
+				List<String> cleaned = new ArrayList<>();
+				for (Object o : list) {
+					if (o != null && !String.valueOf(o).isBlank())
+						cleaned.add(String.valueOf(o).trim());
+				}
+				if (!cleaned.isEmpty())
+					interests = cleaned;
+			}
 			Object life = draft.get("lifestyle");
 			if (life instanceof Map<?, ?> m) {
 				Map<String, Object> lm = new HashMap<>();
@@ -99,6 +140,7 @@ public record MeResponse(
 			}
 		}
 		Integer age = birthday != null ? Period.between(birthday, LocalDate.now()).getYears() : null;
+		List<String> interestList = interests == null ? List.of() : List.copyOf(interests);
 		return new MeResponse(
 				null,
 				row.getEmail(),
@@ -106,7 +148,7 @@ public record MeResponse(
 				false,
 				row.getOnboardingStep(),
 				displayName,
-				null,
+				bio,
 				age,
 				city,
 				null,
@@ -122,6 +164,13 @@ public record MeResponse(
 				null,
 				lifestyle,
 				null,
-				null);
+				null,
+				gender,
+				birthday,
+				interestList,
+				null,
+				null,
+				"FREE",
+				Map.of());
 	}
 }
