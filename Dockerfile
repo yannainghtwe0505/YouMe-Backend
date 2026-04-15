@@ -1,11 +1,23 @@
+# Multi-stage build: Maven → JRE (Spring Boot executable JAR).
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
+
 COPY pom.xml .
 RUN mvn -q -DskipTests dependency:go-offline
+
 COPY src ./src
 RUN mvn -q -DskipTests package
-FROM eclipse-temurin:17-jre
+
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+
+# Match server.port default in application.yml (${SERVER_PORT:8090}).
+ENV SERVER_PORT=8090
+EXPOSE 8090
+
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
 COPY --from=build /app/target/dating-app-0.0.1-SNAPSHOT.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

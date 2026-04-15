@@ -1,7 +1,103 @@
-# Copy to application-local.yml in this folder (same directory as pom.xml).
-# That file is gitignored — safe place for local AWS keys when env vars are not set.
+# =============================================================================
+# TEMPLATE — copy to application-local.yml (same folder as pom.xml):
 #
+#   cp application-local.example.yml application-local.yml
+#
+# application-local.yml is gitignored. Use environment variables in CI/Docker/prod.
+#
+# application.yml only has ${ENV:} placeholders. Spring merges YAML maps: if you set
+# app.ai.enabled here but omit app.ai.api-key, the key stays empty from the base file.
+# So copy every sibling field you need (full app.s3.*, app.subscription.*, etc.)
+# or set the matching environment variables instead.
+#
+# Imports (both optional): ./application-local.yml and ./backend/application-local.yml
+# so the file is found whether the process cwd is backend/ or the repo root.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# QUICK START (minimal runnable local stack: Postgres + JWT + AI off)
+# ---------------------------------------------------------------------------
+spring:
+  datasource:
+    password: your-postgres-password
+
+app:
+  jwt:
+    secret: "paste-output-of: openssl rand -base64 48"
+  ai:
+    enabled: false
+  registration:
+    dev-otp: "123456"
+    log-otp: true
+  subscription:
+    stripe-enabled: false
+  s3:
+    bucket: your-s3-bucket-name
+  media:
+    presigned-get:
+      enabled: false
+  urls:
+    api-public-base-url: "http://localhost:8090"
+    frontend-base-url: "http://localhost:5173"
+
+# ---------------------------------------------------------------------------
+# Optional blocks — uncomment only for the feature you are testing
+# ---------------------------------------------------------------------------
+
+# --- OpenAI / compatible API ---
+# app:
+#   ai:
+#     enabled: true
+#     api-key: "sk-proj-..."
+# Or set environment: OPENAI_API_KEY or APP_AI_API_KEY
+
+# --- Stripe ---
+# app:
+#   subscription:
+#     stripe-enabled: true
+#     secret-key: "sk_test_..."
+#     webhook-secret: "whsec_..."
+#     stripe-price-plus-monthly: "price_..."
+#     stripe-price-gold-monthly: "price_..."
+# Or env: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_*
+
+# --- AWS S3 keys (if not using aws configure / IAM role) ---
 # app:
 #   s3:
-#     access-key-id: YOUR_ACCESS_KEY
-#     secret-access-key: YOUR_SECRET_KEY
+#     access-key-id: "AKIA..."
+#     secret-access-key: "..."
+# app:
+#   media:
+#     presigned-get:
+#       enabled: true
+
+# --- Gmail / SMTP ---
+# spring:
+#   mail:
+#     host: smtp.gmail.com
+#     port: 587
+#     username: your@gmail.com
+#     password: "app-password-16-chars"
+#     properties:
+#       mail.smtp.auth: true
+#       mail.smtp.starttls.enable: true
+#       mail.smtp.starttls.required: true
+# app:
+#   registration:
+#     email:
+#       from: "YouMe <your@gmail.com>"
+
+# --- Twilio ---
+# app:
+#   registration:
+#     twilio:
+#       account-sid: "ACxxxxxxxx"
+#       auth-token: "..."
+#       from-number: "+1xxxxxxxxxx"
+
+# --- Flyway as superuser (see application-postgres-owner.yml) ---
+# spring:
+#   profiles:
+#     active: postgres-owner
+#   datasource:
+#     password: your-postgres-superuser-password

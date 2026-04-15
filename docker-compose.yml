@@ -1,12 +1,22 @@
-version: '3.8'
+# Optional: PostgreSQL only for local development (Spring Boot runs on the host).
+# For API + SPA + Postgres in containers, use the repo-root docker-compose.yml.
+
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: dating
-    ports: ["5432:5432"]
-    volumes: [pgdata:/var/lib/postgresql/data]
+      POSTGRES_USER: DatingAppDB
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: DatingAppDB
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DatingAppDB -d DatingAppDB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   pgdata:

@@ -10,6 +10,9 @@ target/
 # Gradle build folder
 build/
 
+# Eclipse (org.eclipse.* prefs live under .settings/)
+.settings/
+
 # IntelliJ
 .idea/
 *.iml
@@ -21,6 +24,7 @@ build/
 .DS_Store
 Thumbs.db
 
-# Environment files
+# Environment files — never commit machine-specific secrets
 .env
 application-local.yml
+src/main/resources/application-local.yml

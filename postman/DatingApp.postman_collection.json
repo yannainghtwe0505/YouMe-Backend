@@ -2,6 +2,7 @@
   "info": {
     "name": "Dating App API",
     "_postman_id": "d1a-collection",
+    "description": "Set collection variable baseUrl (e.g. http://192.168.1.55:8090). See docs/ENVIRONMENT_URLS.md.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -15,16 +16,7 @@
             "value": "application/json"
           }
         ],
-        "url": {
-          "raw": "http://localhost:8080/auth/register",
-          "host": [
-            "http://localhost:8080"
-          ],
-          "path": [
-            "auth",
-            "register"
-          ]
-        },
+        "url": "{{baseUrl}}/auth/register",
         "body": {
           "mode": "raw",
           "raw": "{\"email\":\"alice2@example.com\",\"password\":\"password\"}"
@@ -41,16 +33,7 @@
             "value": "application/json"
           }
         ],
-        "url": {
-          "raw": "http://localhost:8080/auth/login",
-          "host": [
-            "http://localhost:8080"
-          ],
-          "path": [
-            "auth",
-            "login"
-          ]
-        },
+        "url": "{{baseUrl}}/auth/login",
         "body": {
           "mode": "raw",
           "raw": "{\"email\":\"alice2@example.com\",\"password\":\"password\"}"
@@ -67,19 +50,15 @@
             "value": "Bearer {{token}}"
           }
         ],
-        "url": {
-          "raw": "http://localhost:8080/me",
-          "host": [
-            "http://localhost:8080"
-          ],
-          "path": [
-            "me"
-          ]
-        }
+        "url": "{{baseUrl}}/me"
       }
     }
   ],
   "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://192.168.1.55:8090"
+    },
     {
       "key": "token",
       "value": ""

@@ -6,6 +6,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
@@ -22,7 +23,12 @@ public class JwtService {
 
 	@PostConstruct
 	void init() {
-		key = Keys.hmacShaKeyFor(secret.getBytes());
+		if (secret == null || secret.isBlank()) {
+			throw new IllegalStateException(
+					"app.jwt.secret is empty. Set JWT_SECRET or add app.jwt.secret to backend/application-local.yml "
+							+ "(copy application-local.example.yml).");
+		}
+		key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
 	}
 
 	public String generate(Long userId, String email) {

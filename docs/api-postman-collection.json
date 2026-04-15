@@ -1,0 +1,969 @@
+{
+  "info": {
+    "name": "YouMe Dating API",
+    "description": "Auto-generated from codebase. Set collection variable baseUrl (e.g. http://192.168.1.55:8090) and token. See docs/ENVIRONMENT_URLS.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://192.168.1.55:8090"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "email",
+                  "value": "new@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "displayName",
+                  "value": "New User",
+                  "type": "text"
+                },
+                {
+                  "key": "photos",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Registration onboarding",
+      "item": [
+        {
+          "name": "Tokyo wards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/registration/tokyo-wards"
+          }
+        },
+        {
+          "name": "Email send code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/registration/email/send",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"x@y.com\"}"
+            }
+          }
+        },
+        {
+          "name": "Email verify",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/registration/email/verify",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"x@y.com\",\"code\":\"123456\"}"
+            }
+          }
+        },
+        {
+          "name": "Phone send code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/registration/phone/send",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"phone\":\"+819012345678\"}"
+            }
+          }
+        },
+        {
+          "name": "Phone verify",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/registration/phone/verify",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"phone\":\"+819012345678\",\"code\":\"123456\"}"
+            }
+          }
+        },
+        {
+          "name": "Create password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/registration/password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pendingSessionToken\":\"...\",\"password\":\"secret\"}"
+            }
+          }
+        },
+        {
+          "name": "Registration status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/registration/status"
+          }
+        },
+        {
+          "name": "Patch registration profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/registration/profile",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"displayName\":\"Nick\",\"bio\":\"Hi\"}"
+            }
+          }
+        },
+        {
+          "name": "Complete registration (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/registration/complete",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photos",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Me / Profile",
+      "item": [
+        {
+          "name": "Get me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/me"
+          }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/profile",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"displayName\":\"Sam\",\"bio\":\"Hello\",\"city\":\"Tokyo\"}"
+            }
+          }
+        },
+        {
+          "name": "Set locale",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/locale",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"locale\":\"en\"}"
+            }
+          }
+        },
+        {
+          "name": "Discovery settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/discovery-settings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"maxDistanceKm\":25,\"minAge\":22,\"maxAge\":40}"
+            }
+          }
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"currentPassword\":\"old\",\"newPassword\":\"newpass\"}"
+            }
+          }
+        },
+        {
+          "name": "AI profile tips",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/assistant/profile-tips",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"locale\":\"en\"}"
+            }
+          }
+        },
+        {
+          "name": "Demo upgrade",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/upgrade",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"plan\":\"PLUS\"}"
+            }
+          }
+        },
+        {
+          "name": "Delete account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feed & Blocks",
+      "item": [
+        {
+          "name": "Discover feed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/feed"
+          }
+        },
+        {
+          "name": "Block user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/blocks/999"
+          }
+        },
+        {
+          "name": "Unblock user",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/blocks/999"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Likes",
+      "item": [
+        {
+          "name": "Outbound likes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/likes"
+          }
+        },
+        {
+          "name": "Inbound likes (gated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/likes/inbound"
+          }
+        },
+        {
+          "name": "Like user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/likes/999"
+          }
+        },
+        {
+          "name": "Super like",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/superlikes/999"
+          }
+        },
+        {
+          "name": "Pass / dislike",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/dislikes/999"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Matches & Messages",
+      "item": [
+        {
+          "name": "List matches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/matches"
+          }
+        },
+        {
+          "name": "Unread total",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/matches/unread-total"
+          }
+        },
+        {
+          "name": "Mark match read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/matches/1/read"
+          }
+        },
+        {
+          "name": "Delete match",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/matches/1"
+          }
+        },
+        {
+          "name": "List messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/matches/1/messages?page=0"
+          }
+        },
+        {
+          "name": "Send message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/matches/1/messages",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"body\":\"Hello!\"}"
+            }
+          }
+        },
+        {
+          "name": "Assistant icebreaker",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/matches/1/assistant/icebreaker"
+          }
+        },
+        {
+          "name": "Assistant reply ideas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/matches/1/assistant/reply-ideas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"tone\":\"warm and playful\"}"
+            }
+          }
+        },
+        {
+          "name": "Assistant match insight",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/matches/1/assistant/match-insight"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Photos",
+      "item": [
+        {
+          "name": "List my photos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/photos"
+          }
+        },
+        {
+          "name": "Presign upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/photos/presign?filename=photo.jpg&contentType=image%2Fjpeg"
+          }
+        },
+        {
+          "name": "Complete upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/photos/complete?s3Key=user%2F1%2Fkey.jpg"
+          }
+        },
+        {
+          "name": "Set primary",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/photos/1/primary"
+          }
+        },
+        {
+          "name": "Delete photo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/photos/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI (public)",
+      "item": [
+        {
+          "name": "AI capabilities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/ai/capabilities"
+          }
+        },
+        {
+          "name": "AI plans matrix",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/ai/plans"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscription",
+      "item": [
+        {
+          "name": "Plans catalog",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/subscription/plans"
+          }
+        },
+        {
+          "name": "Current subscription",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/subscription/current"
+          }
+        },
+        {
+          "name": "Checkout session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/subscription/web/checkout-session",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"targetPlan\":\"PLUS\"}"
+            }
+          }
+        },
+        {
+          "name": "Upgrade confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/subscription/upgrade-confirm",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sessionId\":\"cs_test_...\"}"
+            }
+          }
+        },
+        {
+          "name": "Cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/subscription/cancel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"immediate\":false}"
+            }
+          }
+        },
+        {
+          "name": "Downgrade",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/subscription/downgrade",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"targetPlan\":\"PLUS\",\"effective\":\"IMMEDIATE\"}"
+            }
+          }
+        },
+        {
+          "name": "Mobile verify purchase",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/subscription/mobile/verify-purchase",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"platform\":\"ios\",\"receiptData\":\"base64...\"}"
+            }
+          }
+        },
+        {
+          "name": "Restore purchase",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/subscription/restore-purchase",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"platform\":\"android\",\"productId\":\"sku\",\"purchaseToken\":\"...\"}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Stripe webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Stripe-Signature",
+                "value": "t=...",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{baseUrl}}/webhooks/stripe",
+            "description": "Raw Stripe event JSON. No Bearer token."
+          }
+        },
+        {
+          "name": "Apple webhook (placeholder)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{baseUrl}}/webhooks/apple"
+          }
+        },
+        {
+          "name": "Google webhook (placeholder)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{baseUrl}}/webhooks/google"
+          }
+        }
+      ]
+    }
+  ]
+}

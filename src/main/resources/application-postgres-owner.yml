@@ -7,5 +7,5 @@
 # Set SPRING_DATASOURCE_PASSWORD if your local postgres password differs from the default below.
 spring:
   datasource:
-    username: postgres
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    username: ${POSTGRES_SUPERUSER:${SPRING_DATASOURCE_USERNAME:postgres}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DATABASE_PASSWORD:postgres}}

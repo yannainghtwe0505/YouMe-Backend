@@ -1,9 +1,20 @@
-# Local dev: create any missing tables from JPA (Hibernate) and backfill read state once.
-# Use when Flyway is off in application.yml and some migrations were never applied.
+# Local dev: Hibernate can add missing columns/tables; Flyway stays off so non-owner DB users are not blocked
+# by ALTER on tables owned by postgres (see application.yml Flyway section if you migrate as superuser).
+# Public URLs (API, SPA, CORS): see application.yml app.urls and ../docs/ENVIRONMENT_URLS.md
+#
 # Start: mvn spring-boot:run -Dspring-boot.run.profiles=dev
+#
+# If you own the schema and want Flyway instead, run once with:
+#   spring-boot.run.arguments=--spring.flyway.enabled=true --spring.jpa.hibernate.ddl-auto=validate
 spring:
   flyway:
     enabled: false
   jpa:
     hibernate:
       ddl-auto: update
+
+app:
+  registration:
+    # Dev OTP bypass: set REGISTRATION_DEV_OTP or add to application-local.yml (never commit real OTP to shared YAML).
+    dev-otp: ${REGISTRATION_DEV_OTP:}
+    log-otp: true

@@ -1,15 +1,34 @@
+# =============================================================================
+# Shared defaults — SAFE TO COMMIT. No API keys, no cloud passwords, no JWT secret.
+#
+# Put real values in backend/application-local.yml (gitignored). Copy from
+# application-local.example.yml. That file is loaded via spring.config.import below
+# (tries ./application-local.yml then ./backend/application-local.yml so it works
+# whether you start the JVM from backend/ or the repo root).
+#
+# Production: use environment variables (same names as ${...} below) or a secrets manager.
+# =============================================================================
+
+logging:
+  level:
+    com.example.dating: INFO
+
 spring:
+  config:
+    import:
+      - optional:file:./application-local.yml
+      - optional:file:./backend/application-local.yml
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 40MB
   datasource:
-    url: jdbc:postgresql://localhost:5432/DatingAppDB
-    username: DatingAppDB
-    password: postgres
-    # If logs show SQLState 42501 permission denied for table users: schema owner is not this user.
-    # Run scripts/grant-dating-app-privileges.sql as PostgreSQL superuser (see script header).
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:DatingAppDB}
+    username: ${SPRING_DATASOURCE_USERNAME:${DATABASE_USERNAME:DatingAppDB}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DATABASE_PASSWORD:}}
   jpa:
     hibernate:
-      # Use SQL scripts (db/migration, scripts/*.sql) for DDL. Avoids ALTER TABLE as a
-      # non-owner DB user (e.g. "must be owner of table profiles").
-      ddl-auto: validate
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
     properties:
       hibernate.format_sql: true
   flyway:
@@ -17,14 +36,82 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: 8090
+  port: ${SERVER_PORT:8090}
 
 app:
   jwt:
-    secret: "change-me-please-change-me-please-change-me"
-    expirationMinutes: 60
+    secret: ${JWT_SECRET:}
+    expirationMinutes: ${JWT_EXPIRATION_MINUTES:60}
+  registration:
+    dev-otp: ${REGISTRATION_DEV_OTP:}
+    log-otp: ${REGISTRATION_LOG_OTP:true}
+    email:
+      from: ${REGISTRATION_EMAIL_FROM:YouMe <noreply@localhost>}
+    twilio:
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      from-number: ${TWILIO_FROM_NUMBER:}
+  ai:
+    enabled: ${AI_ENABLED:false}
+    api-key: ${APP_AI_API_KEY:${OPENAI_API_KEY:}}
+    base-url: ${AI_BASE_URL:https://api.openai.com/v1}
+    model: ${AI_MODEL:gpt-4o-mini}
+    free-daily-coach-uses: 3
+    premium-daily-coach-uses: 20
+    usage-timezone: Asia/Tokyo
+    redis-usage-enabled: false
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+    gold-fair-use-daily-cap: 500
+    free-tier:
+      chat-replies: 3
+      profile-ai: 1
+      match-greetings: 1
+      match-insights: 0
+    plus-tier:
+      chat-replies: 20
+      profile-ai: 5
+      match-greetings: 10
+      match-insights: 20
+    gold-tier:
+      chat-replies: -1
+      profile-ai: -1
+      match-greetings: -1
+      match-insights: -1
+  urls:
+    api-public-base-url: ${APP_API_PUBLIC_BASE_URL:http://localhost:8090}
+    frontend-base-url: ${APP_FRONTEND_BASE_URL:http://localhost:5173}
+    mobile-base-url: ${APP_MOBILE_BASE_URL:}
+    websocket-public-base-url: ${APP_WS_PUBLIC_BASE_URL:}
+    cors-allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:*}
+  subscription:
+    stripe-enabled: ${STRIPE_ENABLED:false}
+    secret-key: ${STRIPE_SECRET_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    success-path: "/upgrade/success"
+    cancel-path: "/upgrade?canceled=1"
+    currency: jpy
+    plus-price-minor: 980
+    gold-price-minor: 1980
+    stripe-price-plus-monthly: ${STRIPE_PRICE_PLUS_MONTHLY:}
+    stripe-price-gold-monthly: ${STRIPE_PRICE_GOLD_MONTHLY:}
+    apple-shared-secret: ${APPLE_SHARED_SECRET:}
+    apple-product-plus-monthly: ${APPLE_PRODUCT_PLUS_MONTHLY:}
+    apple-product-gold-monthly: ${APPLE_PRODUCT_GOLD_MONTHLY:}
+    google-play-package-name: ${GOOGLE_PLAY_PACKAGE_NAME:}
+    google-play-credentials-json: ${GOOGLE_PLAY_CREDENTIALS_JSON:}
+    google-product-plus-monthly: ${GOOGLE_PRODUCT_PLUS_MONTHLY:}
+    google-product-gold-monthly: ${GOOGLE_PRODUCT_GOLD_MONTHLY:}
   s3:
-    bucket: your-bucket-name
-    region: ap-northeast-1
+    bucket: ${S3_BUCKET:local-dev-bucket-placeholder}
+    region: ${AWS_REGION:${S3_REGION:us-east-1}}
+    access-key-id: ${AWS_ACCESS_KEY_ID:${S3_ACCESS_KEY_ID:}}
+    secret-access-key: ${AWS_SECRET_ACCESS_KEY:${S3_SECRET_ACCESS_KEY:}}
   media:
-    public-base-url: "https://example-s3/your-bucket-name"
+    public-base-url: ${MEDIA_PUBLIC_BASE_URL:http://localhost:8090}
+    presigned-put:
+      expiration-minutes: 15
+    presigned-get:
+      enabled: ${MEDIA_PRESIGNED_GET_ENABLED:false}
+      expiration-minutes: 60

@@ -18,6 +18,9 @@ spring:
 logging.level.org.hibernate.SQL: off
 
 app:
+  jwt:
+    # Fixed test secret (not production); keeps JwtService @PostConstruct valid under H2 slice tests.
+    secret: ${JWT_SECRET:test-jwt-secret-for-ci-and-h2-only-min-32-chars!!}
   urls:
     api-public-base-url: "https://api.test.example"
     frontend-base-url: "https://app.test.example"

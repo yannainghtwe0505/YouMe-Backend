@@ -27,8 +27,8 @@ mvn spring-boot:run
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-- **API base URL:** `http://localhost:8090` (see `server.port` in `application.yml`)
-- **OpenAPI / Swagger UI:** `http://localhost:8090/swagger-ui.html` (exact path may vary by SpringDoc version)
+- **API base URL:** set via `app.urls.api-public-base-url` / `APP_API_PUBLIC_BASE_URL` (default in `application.yml` is LAN-friendly). See [../docs/ENVIRONMENT_URLS.md](../docs/ENVIRONMENT_URLS.md).
+- **OpenAPI / Swagger UI:** `{apiRoot}/swagger-ui.html` (exact path may vary by SpringDoc version)
 
 Default config uses `spring.jpa.hibernate.ddl-auto: update` with Flyway **off** so a local DB picks up new entity columns (e.g. `messages.message_kind`). For production, set `SPRING_JPA_HIBERNATE_DDL_AUTO=validate` and run Flyway. See `src/main/resources/db/migration/`.
 
@@ -46,7 +46,15 @@ If the DB user cannot access tables, run `scripts/grant-dating-app-privileges.sq
 | JWT | `application.yml` → `app.jwt.*` | **Change `secret` before production.** |
 | S3 / media | `application.yml` → `app.s3.*`, `app.media.*` | Presign is placeholder until AWS SDK is wired (see spec). |
 | Flyway | `application.yml` → `spring.flyway.enabled` | Off by default; enable to run migrations automatically. |
-| CORS | `WebConfig.java` | Add your frontend origin(s) for production. |
+| URLs + CORS | `application.yml` → `app.urls.*`, `WebConfig.java` | Set `APP_CORS_ALLOWED_ORIGIN_PATTERNS` (comma-separated) and `SPRING_PROFILES_ACTIVE=prod` for production. |
+
+---
+
+## Docker
+
+- **API image:** `Dockerfile` in this folder (multi-stage Maven build, JRE 17, listens on **8090**).
+- **Full stack (Postgres + API + SPA):** from the **repo root**, run `docker compose up --build` — see [../docs/ENVIRONMENT_URLS.md](../docs/ENVIRONMENT_URLS.md#docker-full-stack).
+- **Postgres only** (API on host): `docker compose -f docker-compose.yml up` in this folder.
 
 ---
 
@@ -87,4 +95,4 @@ Artifact name follows `pom.xml` `<artifactId>` and `<version>`.
 
 ## Frontend
 
-The browser app lives in the sibling folder **`../frontend`**. Point the SPA’s API `baseURL` at this server (default in frontend: `http://localhost:8090`).
+The browser app lives in the sibling folder **`../frontend`**. API URL is configured with **`VITE_API_URL`** (see `../docs/ENVIRONMENT_URLS.md`).

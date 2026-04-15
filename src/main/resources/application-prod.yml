@@ -1,0 +1,21 @@
+# Production — activate with: SPRING_PROFILES_ACTIVE=prod
+#
+# Secrets must come from the environment (or a secrets manager), never from committed YAML:
+#   JWT_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, OPENAI_API_KEY (or APP_AI_API_KEY),
+#   SPRING_DATASOURCE_PASSWORD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, TWILIO_*, APPLE_SHARED_SECRET, etc.
+# See application.yml for the full ${VAR} list and application-local.example.yml for local-only patterns.
+#
+# Prefer setting APP_API_PUBLIC_BASE_URL, APP_FRONTEND_BASE_URL, and APP_CORS_ALLOWED_ORIGIN_PATTERNS
+# in your process manager or container env (no code changes).
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+app:
+  urls:
+    api-public-base-url: ${APP_API_PUBLIC_BASE_URL:https://api.youme.com}
+    frontend-base-url: ${APP_FRONTEND_BASE_URL:https://app.youme.com}
+    mobile-base-url: ${APP_MOBILE_BASE_URL:}
+    websocket-public-base-url: ${APP_WS_PUBLIC_BASE_URL:}
+    cors-allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:https://app.youme.com}

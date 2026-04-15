@@ -1,0 +1,14 @@
+# Staging — activate with: SPRING_PROFILES_ACTIVE=staging
+# Override URLs with the same env vars as production if defaults below are wrong for your hostnames.
+spring:
+  config:
+    activate:
+      on-profile: staging
+
+app:
+  urls:
+    api-public-base-url: ${APP_API_PUBLIC_BASE_URL:https://staging-api.youme.com}
+    frontend-base-url: ${APP_FRONTEND_BASE_URL:https://staging-app.youme.com}
+    mobile-base-url: ${APP_MOBILE_BASE_URL:}
+    websocket-public-base-url: ${APP_WS_PUBLIC_BASE_URL:}
+    cors-allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:https://staging-app.youme.com}
