@@ -8,10 +8,19 @@ import com.example.dating.model.subscription.SubscriptionPlan;
 @ConfigurationProperties(prefix = "app.ai")
 public class AiProperties {
 	/**
+	 * LLM backend: {@code bedrock} (Amazon Bedrock Converse API, IAM credentials) or {@code openai}
+	 * (OpenAI-compatible HTTP {@code /chat/completions}).
+	 */
+	private String provider = "bedrock";
+	/** Bedrock foundation model id, e.g. {@code anthropic.claude-3-5-haiku-20241022-v1:0} or cross-region id {@code us.anthropic...}. */
+	private String bedrockModelId = "";
+	/** AWS region for Bedrock Runtime; falls back to {@link #resolveBedrockRegion()} when blank. */
+	private String bedrockRegion = "";
+	/**
 	 * When false, only local templates are used.
 	 */
 	private boolean enabled = true;
-	/** OpenAI-compatible API key (also read OPENAI_API_KEY env in yaml). */
+	/** OpenAI-compatible API key when {@link #provider} is {@code openai}. */
 	private String apiKey = "";
 	private String baseUrl = "https://api.openai.com/v1";
 	private String model = "gpt-4o-mini";
@@ -172,6 +181,68 @@ public class AiProperties {
 
 	public boolean hasApiKey() {
 		return apiKey != null && !apiKey.isBlank();
+	}
+
+	public String getProvider() {
+		return provider;
+	}
+
+	public void setProvider(String provider) {
+		this.provider = provider;
+	}
+
+	public String getBedrockModelId() {
+		return bedrockModelId;
+	}
+
+	public void setBedrockModelId(String bedrockModelId) {
+		this.bedrockModelId = bedrockModelId;
+	}
+
+	public String getBedrockRegion() {
+		return bedrockRegion;
+	}
+
+	public void setBedrockRegion(String bedrockRegion) {
+		this.bedrockRegion = bedrockRegion;
+	}
+
+	/** AWS region used to build the Bedrock Runtime client when {@link #bedrockRegion} is blank. */
+	public String resolveBedrockRegion() {
+		if (bedrockRegion != null && !bedrockRegion.isBlank()) {
+			return bedrockRegion.trim();
+		}
+		String fromEnv = System.getenv("AWS_REGION");
+		if (fromEnv != null && !fromEnv.isBlank()) {
+			return fromEnv.trim();
+		}
+		String fromAlt = System.getenv("AWS_DEFAULT_REGION");
+		if (fromAlt != null && !fromAlt.isBlank()) {
+			return fromAlt.trim();
+		}
+		return "us-east-1";
+	}
+
+	public boolean isOpenAiProvider() {
+		return provider != null && "openai".equalsIgnoreCase(provider.trim());
+	}
+
+	public boolean isBedrockConfigured() {
+		return bedrockModelId != null && !bedrockModelId.isBlank();
+	}
+
+	/**
+	 * True when AI is enabled and the active provider has the minimum configuration to call the LLM
+	 * (OpenAI: API key; Bedrock: model id + default credential chain at runtime).
+	 */
+	public boolean isLlmConfigured() {
+		if (!enabled) {
+			return false;
+		}
+		if (isOpenAiProvider()) {
+			return hasApiKey();
+		}
+		return isBedrockConfigured();
 	}
 
 	public String getUsageTimezone() {

@@ -110,6 +110,13 @@
 			<version>2.28.29</version>
 		</dependency>
 
+		<!-- Amazon Bedrock Runtime (Converse API for AI coach) -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>bedrockruntime</artifactId>
+			<version>2.28.29</version>
+		</dependency>
+
 		<!-- Stripe Checkout / webhooks -->
 		<dependency>
 			<groupId>com.stripe</groupId>

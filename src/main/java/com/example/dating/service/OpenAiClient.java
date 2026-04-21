@@ -8,14 +8,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.stereotype.Component;
-
 import com.example.dating.config.AiProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@Component
-public class OpenAiClient {
+public class OpenAiClient implements ChatLlmClient {
 	private final AiProperties props;
 	private final ObjectMapper objectMapper;
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build();

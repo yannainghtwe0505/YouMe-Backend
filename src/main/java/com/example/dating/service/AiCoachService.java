@@ -23,12 +23,12 @@ public class AiCoachService {
 	private static final Set<String> SUGGESTION_TYPES = Set.of(
 			"emotional_support", "advice", "casual", "flirty", "question", "suggestion");
 
-	private final OpenAiClient openAi;
+	private final ChatLlmClient llmClient;
 	private final AiProperties aiProperties;
 	private final ObjectMapper objectMapper;
 
-	public AiCoachService(OpenAiClient openAi, AiProperties aiProperties, ObjectMapper objectMapper) {
-		this.openAi = openAi;
+	public AiCoachService(ChatLlmClient llmClient, AiProperties aiProperties, ObjectMapper objectMapper) {
+		this.llmClient = llmClient;
 		this.aiProperties = aiProperties;
 		this.objectMapper = objectMapper;
 	}
@@ -71,7 +71,7 @@ public class AiCoachService {
 				+ (trimOrEmpty(bioB).isEmpty() ? "" : "About " + nameB + ": " + trimOrEmpty(bioB) + "\n")
 				+ "Write ONE greeting line they both see (not from either person).";
 		try {
-			String ai = openAi.chatCompletion(sys, user, tokens, temp);
+			String ai = llmClient.chatCompletion(sys, user, tokens, temp);
 			if (ai != null && !ai.isBlank())
 				return new MatchGreetingOutcome(sanitizeOneLine(ai), true);
 		} catch (Exception ignored) {
@@ -126,7 +126,7 @@ public class AiCoachService {
 				ctx.append("- ").append(line.trim()).append("\n");
 		}
 		try {
-			String raw = openAi.chatCompletion(sys, ctx.toString(), tokens, temp);
+			String raw = llmClient.chatCompletion(sys, ctx.toString(), tokens, temp);
 			if (raw != null) {
 				var node = objectMapper.readTree(raw.replaceAll("^[^{]*", ""));
 				var arr = node.path("ideas");
@@ -228,7 +228,7 @@ public class AiCoachService {
 		if (p.getLifestyle() != null && !p.getLifestyle().isEmpty())
 			ctx.append("Lifestyle (self-reported keys): ").append(p.getLifestyle().keySet()).append("\n");
 		try {
-			String raw = openAi.chatCompletion(sys, ctx.toString(), tokens, temp);
+			String raw = llmClient.chatCompletion(sys, ctx.toString(), tokens, temp);
 			if (raw != null) {
 				var node = objectMapper.readTree(raw.replaceAll("^[^{]*", ""));
 				var arr = node.path("tips");
@@ -258,7 +258,7 @@ public class AiCoachService {
 			fallback.put("depth", "minimal");
 			return fallback;
 		}
-		if (!aiProperties.isEnabled() || !aiProperties.hasApiKey())
+		if (!aiProperties.isEnabled() || !aiProperties.isLlmConfigured())
 			return fallback;
 		String vName = trimOrEmpty(viewer.getDisplayName());
 		String pName = trimOrEmpty(peer.getDisplayName());
@@ -280,7 +280,7 @@ public class AiCoachService {
 		int tokens = plan == SubscriptionPlan.GOLD ? 900 : 480;
 		double temp = plan == SubscriptionPlan.GOLD ? 0.82 : 0.7;
 		try {
-			String raw = openAi.chatCompletion(sys, user.toString(), tokens, temp);
+			String raw = llmClient.chatCompletion(sys, user.toString(), tokens, temp);
 			if (raw != null) {
 				var node = objectMapper.readTree(raw.replaceAll("^[^{]*", ""));
 				Map<String, Object> out = new HashMap<>();
@@ -342,7 +342,7 @@ public class AiCoachService {
 	}
 
 	public AiMeta meta() {
-		return new AiMeta(aiProperties.isEnabled() && aiProperties.hasApiKey());
+		return new AiMeta(aiProperties.isLlmConfigured());
 	}
 
 	public record AiMeta(boolean llmConfigured) {

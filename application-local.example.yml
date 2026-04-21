@@ -44,9 +44,20 @@ app:
 # Optional blocks — uncomment only for the feature you are testing
 # ---------------------------------------------------------------------------
 
-# --- OpenAI / compatible API ---
+# --- Amazon Bedrock (default when AI_PROVIDER=bedrock) — Converse API, IAM credentials ---
+# Enable the model in the Bedrock console and grant iam:PassRole / bedrock:InvokeModel as needed.
 # app:
 #   ai:
+#     provider: bedrock
+#     enabled: true
+#     bedrock-model-id: "anthropic.claude-3-5-haiku-20241022-v1:0"
+#     bedrock-region: "us-east-1"
+# Or env: BEDROCK_MODEL_ID, BEDROCK_REGION / AWS_REGION. Uses same credential chain as S3 (app.s3.* or ~/.aws).
+
+# --- OpenAI-compatible API (set app.ai.provider: openai) ---
+# app:
+#   ai:
+#     provider: openai
 #     enabled: true
 #     api-key: "sk-proj-..."
 # Or set environment: OPENAI_API_KEY or APP_AI_API_KEY
