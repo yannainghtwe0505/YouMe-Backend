@@ -10,54 +10,59 @@ name: Deploy Backend
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 env:
   IMAGE: yannainghtwe/youme-backend:latest
 
 jobs:
-  build-test-push-deploy:
+  build-push-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      # 🧪 Optional (recommended for Spring Boot)
-      - name: Build backend
-        run: |
-          ./mvnw clean package -DskipTests
+      # 📥 Checkout code
+      - name: Checkout
+        uses: actions/checkout@v4
 
       # 🐳 Build Docker image
       - name: Build image
         run: |
           docker build -t $IMAGE .
 
-      # 🔐 Login Docker Hub
+      # 🔐 Login to Docker Hub
       - name: Login Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       # 📦 Push image
       - name: Push image
-        run: docker push $IMAGE
+        run: |
+          docker push $IMAGE
 
-      # 🔑 SSH setup
+      # 🔑 Setup SSH
       - name: Install SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      # 🚀 Deploy (NOW MATCHES FRONTEND)
+      # 🚀 Deploy to EC2
       - name: Deploy on EC2
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }}" << 'EOF'
             set -e
+
+            echo "📂 Go to project directory"
             cd ~/dating-app
 
-            echo "🐳 Pull latest backend image..."
+            echo "🐳 Pull latest backend image"
             docker pull yannainghtwe/youme-backend:latest
 
-            echo "🚀 Restart backend..."
+            echo "🚀 Restart backend container"
             docker compose -f docker-compose.prod.yml up -d --no-deps backend
 
-            echo "✅ Done"
+            echo "🧹 Cleanup old images (optional)"
+            docker image prune -f
+
+            echo "✅ Backend deployed successfully"
           EOF
