@@ -121,7 +121,10 @@ app:
     secret-access-key: ${AWS_SECRET_ACCESS_KEY:${S3_SECRET_ACCESS_KEY:}}
   media:
     public-base-url: ${MEDIA_PUBLIC_BASE_URL:http://localhost:8090}
+    # When true, POST /photos/presign is disabled (use the serverless presign repo; set VITE_PRESIGN_API_URL on the SPA).
+    presign-serverless-only: ${MEDIA_PRESIGN_SERVERLESS_ONLY:false}
     presigned-put:
+      enabled: ${MEDIA_PRESIGNED_PUT_ENABLED:true}
       expiration-minutes: 15
     presigned-get:
       enabled: ${MEDIA_PRESIGNED_GET_ENABLED:false}

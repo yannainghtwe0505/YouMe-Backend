@@ -5,6 +5,10 @@
 #
 # application-local.yml is gitignored. Use environment variables in CI/Docker/prod.
 #
+# Serverless presign: for production, set env MEDIA_PRESIGN_SERVERLESS_ONLY=true on the API
+# and VITE_PRESIGN_API_URL on the SPA; presign is deployed from a separate serverless Git repo
+# (same JWT secret as app.jwt.secret).
+#
 # application.yml only has ${ENV:} placeholders. Spring merges YAML maps: if you set
 # app.ai.enabled here but omit app.ai.api-key, the key stays empty from the base file.
 # So copy every sibling field you need (full app.s3.*, app.subscription.*, etc.)

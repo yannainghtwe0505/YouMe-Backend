@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.example.dating.config.MediaUrls;
 import com.example.dating.model.entity.PhotoEntity;
@@ -21,6 +22,7 @@ import com.example.dating.repository.PhotoRepo;
 import com.example.dating.repository.ProfileRepo;
 import com.example.dating.service.PhotoService;
 import com.example.dating.service.PresignService;
+import com.example.dating.util.PhotoStoragePolicy;
 
 @RestController
 @RequestMapping("/photos")
@@ -28,14 +30,17 @@ public class PhotoController {
 	public static final int MAX_PHOTOS_PER_USER = 6;
 
 	private final PresignService presign;
+	private final boolean presignServerlessOnly;
 	private final PhotoRepo photoRepo;
 	private final ProfileRepo profileRepo;
 	private final MediaUrls mediaUrls;
 	private final PhotoService photoService;
 
-	public PhotoController(PresignService presign, PhotoRepo photoRepo, ProfileRepo profileRepo, MediaUrls mediaUrls,
-			PhotoService photoService) {
+	public PhotoController(PresignService presign,
+			@Value("${app.media.presign-serverless-only:false}") boolean presignServerlessOnly, PhotoRepo photoRepo,
+			ProfileRepo profileRepo, MediaUrls mediaUrls, PhotoService photoService) {
 		this.presign = presign;
+		this.presignServerlessOnly = presignServerlessOnly;
 		this.photoRepo = photoRepo;
 		this.profileRepo = profileRepo;
 		this.mediaUrls = mediaUrls;
@@ -71,6 +76,11 @@ public class PhotoController {
 	@PostMapping("/presign")
 	public ResponseEntity<?> presign(@AuthenticationPrincipal User me, @RequestParam String filename,
 			@RequestParam String contentType) {
+		if (presignServerlessOnly) {
+			return ResponseEntity.status(410).body(Map.of(
+					"error", "Presign is served by the serverless presign repository. Set VITE_PRESIGN_API_URL on the frontend app.",
+					"code", "PRESIGN_SERVERLESS_ONLY"));
+		}
 		Long userId = Long.valueOf(me.getUsername());
 		if (photoRepo.countByUserId(userId) >= MAX_PHOTOS_PER_USER) {
 			return ResponseEntity.badRequest().body(Map.of("error", "Maximum " + MAX_PHOTOS_PER_USER + " photos"));
@@ -89,6 +99,10 @@ public class PhotoController {
 	@PostMapping("/complete")
 	public ResponseEntity<?> complete(@AuthenticationPrincipal User me, @RequestParam String s3Key) {
 		Long userId = Long.valueOf(me.getUsername());
+		if (!PhotoStoragePolicy.isValidUploadKeyForUser(userId, s3Key)) {
+			return ResponseEntity.badRequest()
+					.body(Map.of("error", "Invalid or foreign s3 key for this account"));
+		}
 		if (photoRepo.countByUserId(userId) >= MAX_PHOTOS_PER_USER) {
 			return ResponseEntity.badRequest().body(Map.of("error", "Maximum " + MAX_PHOTOS_PER_USER + " photos"));
 		}
