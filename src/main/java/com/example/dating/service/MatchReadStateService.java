@@ -29,7 +29,7 @@ public class MatchReadStateService {
 		repo.save(sB);
 	}
 
-	public void markRead(Long userId, Long matchId) {
+	public Instant markRead(Long userId, Long matchId) {
 		Instant now = Instant.now();
 		MatchReadState s = repo.findByUserIdAndMatchId(userId, matchId).orElseGet(() -> {
 			MatchReadState n = new MatchReadState();
@@ -39,5 +39,6 @@ public class MatchReadStateService {
 		});
 		s.setLastReadAt(now);
 		repo.save(s);
+		return now;
 	}
 }

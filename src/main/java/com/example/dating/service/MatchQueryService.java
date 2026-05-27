@@ -17,6 +17,7 @@ import com.example.dating.repository.MatchReadStateRepo;
 import com.example.dating.repository.MatchRepo;
 import com.example.dating.repository.MessageRepo;
 import com.example.dating.repository.ProfileRepo;
+import com.example.dating.repository.UserRepo;
 
 @Service
 public class MatchQueryService {
@@ -28,15 +29,20 @@ public class MatchQueryService {
 	private final MatchReadStateRepo readStateRepo;
 	private final BlockService blockService;
 	private final ProfileAvatarService profileAvatarService;
+	private final PresenceService presenceService;
+	private final UserRepo userRepo;
 
 	public MatchQueryService(MatchRepo matchRepo, ProfileRepo profileRepo, MessageRepo messageRepo,
-			MatchReadStateRepo readStateRepo, BlockService blockService, ProfileAvatarService profileAvatarService) {
+			MatchReadStateRepo readStateRepo, BlockService blockService, ProfileAvatarService profileAvatarService,
+			PresenceService presenceService, UserRepo userRepo) {
 		this.matchRepo = matchRepo;
 		this.profileRepo = profileRepo;
 		this.messageRepo = messageRepo;
 		this.readStateRepo = readStateRepo;
 		this.blockService = blockService;
 		this.profileAvatarService = profileAvatarService;
+		this.presenceService = presenceService;
+		this.userRepo = userRepo;
 	}
 
 	public List<Map<String, Object>> listMatchesForUser(Long userId) {
@@ -81,6 +87,9 @@ public class MatchQueryService {
 			row.put("peerName", "User " + peerId);
 			row.put("peerAvatar", null);
 		}
+		var lastActiveAt = userRepo.findById(peerId).map(u -> u.getLastActiveAt()).orElse(null);
+		row.put("peerLastActiveAt", lastActiveAt);
+		row.put("peerOnline", presenceService.isOnline(lastActiveAt));
 
 		Instant lastRead = readStateRepo.findByUserIdAndMatchId(me, m.getId())
 				.map(rs -> rs.getLastReadAt())

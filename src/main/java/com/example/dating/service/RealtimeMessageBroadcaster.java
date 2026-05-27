@@ -1,5 +1,7 @@
 package com.example.dating.service;
 
+import java.time.Instant;
+
 import org.springframework.stereotype.Service;
 
 import com.example.dating.chat.ChatSessionRegistry;
@@ -18,5 +20,9 @@ public class RealtimeMessageBroadcaster {
 
 	public void broadcastNewChatMessage(Long matchId, MessageEntity m) {
 		chatSessionRegistry.broadcastNewChatMessage(matchId, m);
+	}
+
+	public void broadcastReadReceipt(Long matchId, Long readerUserId, Instant readAt) {
+		chatSessionRegistry.broadcastReadReceipt(matchId, readerUserId, readAt);
 	}
 }

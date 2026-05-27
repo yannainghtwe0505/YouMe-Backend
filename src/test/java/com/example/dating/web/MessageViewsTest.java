@@ -20,10 +20,11 @@ class MessageViewsTest {
 		m.setCreatedAt(Instant.parse("2020-01-01T00:00:00Z"));
 		m.setSenderId(2L);
 		m.setMessageKind(MessageEntity.KIND_USER);
-		var row = MessageViews.toRow(m, 2L);
+		var row = MessageViews.toRow(m, 2L, null);
 		assertFalse((Boolean) row.get("isAssistant"));
 		assertTrue((Boolean) row.get("isFromCurrentUser"));
 		assertEquals(9L, row.get("id"));
+		assertEquals("delivered", row.get("readStatus"));
 	}
 
 	@Test

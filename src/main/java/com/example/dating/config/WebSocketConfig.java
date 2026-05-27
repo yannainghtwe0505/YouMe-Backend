@@ -13,16 +13,19 @@ import com.example.dating.chat.MatchChatWebSocketHandler;
 public class WebSocketConfig implements WebSocketConfigurer {
 	private final MatchChatWebSocketHandler chatHandler;
 	private final ChatHandshakeInterceptor handshakeInterceptor;
+	private final AppUrlsProperties appUrlsProperties;
 
-	public WebSocketConfig(MatchChatWebSocketHandler chatHandler, ChatHandshakeInterceptor handshakeInterceptor) {
+	public WebSocketConfig(MatchChatWebSocketHandler chatHandler, ChatHandshakeInterceptor handshakeInterceptor,
+			AppUrlsProperties appUrlsProperties) {
 		this.chatHandler = chatHandler;
 		this.handshakeInterceptor = handshakeInterceptor;
+		this.appUrlsProperties = appUrlsProperties;
 	}
 
 	@Override
 	public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
 		registry.addHandler(chatHandler, "/ws/chat")
 				.addInterceptors(handshakeInterceptor)
-				.setAllowedOriginPatterns("*");
+				.setAllowedOriginPatterns(appUrlsProperties.corsAllowedOriginPatternsList().toArray(String[]::new));
 	}
 }

@@ -32,7 +32,7 @@ INSERT INTO users (
   locale
 )
 SELECT
-  format('seed%03d@youme.test', i),
+  'seed' || lpad(i::text, 3, '0') || '@youme.test',
   '$2b$10$GKENAxxda6nhA1E3a5BEh.rwj/PmdFtl5BIWFW1Zj5cOqI3/3VibW',
   now() - ((400 - i) || ' hours')::interval,
   true,

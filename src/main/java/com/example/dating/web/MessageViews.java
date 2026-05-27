@@ -1,5 +1,6 @@
 package com.example.dating.web;
 
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -9,7 +10,7 @@ public final class MessageViews {
 	private MessageViews() {
 	}
 
-	public static Map<String, Object> toRow(MessageEntity m, Long currentUserId) {
+	public static Map<String, Object> toRow(MessageEntity m, Long currentUserId, Instant peerLastReadAt) {
 		Map<String, Object> row = new LinkedHashMap<>();
 		row.put("id", m.getId());
 		row.put("body", m.getBody());
@@ -18,8 +19,20 @@ public final class MessageViews {
 		row.put("messageKind", m.getMessageKind());
 		boolean assistant = MessageEntity.KIND_ASSISTANT.equals(m.getMessageKind());
 		row.put("isAssistant", assistant);
-		row.put("isFromCurrentUser", !assistant && m.getSenderId() != null && m.getSenderId().equals(currentUserId));
+		boolean fromMe = !assistant && m.getSenderId() != null && m.getSenderId().equals(currentUserId);
+		row.put("isFromCurrentUser", fromMe);
+		if (fromMe && m.getCreatedAt() != null) {
+			row.put("readStatus", readStatusFor(m.getCreatedAt(), peerLastReadAt));
+		}
 		return row;
+	}
+
+	/** delivered = saved on server; read = peer opened thread through this message. */
+	private static String readStatusFor(Instant messageAt, Instant peerLastReadAt) {
+		if (peerLastReadAt != null && !peerLastReadAt.isBefore(messageAt)) {
+			return "read";
+		}
+		return "delivered";
 	}
 
 	/** WS payload: clients reload thread or merge using senderId / messageKind. */

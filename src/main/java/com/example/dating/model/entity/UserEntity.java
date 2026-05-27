@@ -21,6 +21,8 @@ public class UserEntity {
 	private Instant createdAt;
 	@Column(name = "last_login")
 	private Instant lastLogin;
+	@Column(name = "last_active_at")
+	private Instant lastActiveAt;
 	@Column(name = "registration_complete", nullable = false)
 	@ColumnDefault("true")
 	private boolean registrationComplete = true;
@@ -85,6 +87,14 @@ public class UserEntity {
 
 	public void setLastLogin(Instant i) {
 		this.lastLogin = i;
+	}
+
+	public Instant getLastActiveAt() {
+		return lastActiveAt;
+	}
+
+	public void setLastActiveAt(Instant lastActiveAt) {
+		this.lastActiveAt = lastActiveAt;
 	}
 
 	public boolean isRegistrationComplete() {

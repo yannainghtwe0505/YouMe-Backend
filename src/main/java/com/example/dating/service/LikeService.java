@@ -49,6 +49,7 @@ public class LikeService {
 	private final AssistantGreetingService assistantGreetingService;
 	private final ProfileAvatarService profileAvatarService;
 	private final SubscriptionPlanService subscriptionPlanService;
+	private final PushNotificationService pushNotificationService;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -56,7 +57,7 @@ public class LikeService {
 	public LikeService(LikeRepo likeRepo, MatchRepo matchRepo, ProfileRepo profileRepo, PassRepo passRepo,
 			MatchReadStateService matchReadStateService, BlockService blockService,
 			AssistantGreetingService assistantGreetingService, ProfileAvatarService profileAvatarService,
-			SubscriptionPlanService subscriptionPlanService) {
+			SubscriptionPlanService subscriptionPlanService, PushNotificationService pushNotificationService) {
 		this.likeRepo = likeRepo;
 		this.matchRepo = matchRepo;
 		this.profileRepo = profileRepo;
@@ -66,6 +67,7 @@ public class LikeService {
 		this.assistantGreetingService = assistantGreetingService;
 		this.profileAvatarService = profileAvatarService;
 		this.subscriptionPlanService = subscriptionPlanService;
+		this.pushNotificationService = pushNotificationService;
 	}
 
 	public List<Map<String, Object>> getLikesForUser(Long userId) {
@@ -201,18 +203,28 @@ public class LikeService {
 			MatchEntity saved = matchRepo.saveAndFlush(m);
 			matchReadStateService.seedNewMatch(saved.getId(), a, b);
 			Long newMatchId = saved.getId();
+			Long userA = a;
+			Long userB = b;
 			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 				@Override
 				public void afterCommit() {
 					assistantGreetingService.trySeedAssistantGreeting(newMatchId, actingUserId);
+					String nameA = displayName(userA);
+					String nameB = displayName(userB);
+					pushNotificationService.notifyNewMatch(userA, newMatchId, nameB);
+					pushNotificationService.notifyNewMatch(userB, newMatchId, nameA);
 				}
 			});
-			return LikeOutcome.matched(saved.getId());
+			return LikeOutcome.matched(newMatchId);
 		} catch (DataIntegrityViolationException ex) {
 			entityManager.clear();
 			return matchRepo.findByUserAAndUserB(a, b)
 					.map(match -> LikeOutcome.matched(match.getId()))
 					.orElseThrow(() -> ex);
 		}
+	}
+
+	private String displayName(Long userId) {
+		return profileRepo.findById(userId).map(ProfileEntity::getDisplayName).orElse(null);
 	}
 }

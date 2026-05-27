@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.dating.service.BlockService;
 import com.example.dating.service.MatchQueryService;
 import com.example.dating.service.MatchReadStateService;
+import com.example.dating.service.PresenceService;
+import com.example.dating.service.RealtimeMessageBroadcaster;
 
 @RestController
 @RequestMapping("/matches")
@@ -23,23 +25,30 @@ public class MatchController {
 	private final MatchQueryService matchQueryService;
 	private final MatchReadStateService matchReadStateService;
 	private final BlockService blockService;
+	private final PresenceService presenceService;
+	private final RealtimeMessageBroadcaster realtimeMessageBroadcaster;
 
 	public MatchController(MatchQueryService matchQueryService, MatchReadStateService matchReadStateService,
-			BlockService blockService) {
+			BlockService blockService, PresenceService presenceService,
+			RealtimeMessageBroadcaster realtimeMessageBroadcaster) {
 		this.matchQueryService = matchQueryService;
 		this.matchReadStateService = matchReadStateService;
 		this.blockService = blockService;
+		this.presenceService = presenceService;
+		this.realtimeMessageBroadcaster = realtimeMessageBroadcaster;
 	}
 
 	@GetMapping
 	public ResponseEntity<List<Map<String, Object>>> list(@AuthenticationPrincipal User me) {
 		Long userId = Long.valueOf(me.getUsername());
+		presenceService.touch(userId);
 		return ResponseEntity.ok(matchQueryService.listMatchesForUser(userId));
 	}
 
 	@GetMapping("/unread-total")
 	public ResponseEntity<Map<String, Long>> unreadTotal(@AuthenticationPrincipal User me) {
 		Long userId = Long.valueOf(me.getUsername());
+		presenceService.touch(userId);
 		return ResponseEntity.ok(Map.of("total", matchQueryService.totalUnreadForUser(userId)));
 	}
 
@@ -54,8 +63,10 @@ public class MatchController {
 				.orElse(true)) {
 			return ResponseEntity.status(403).build();
 		}
-		matchReadStateService.markRead(userId, matchId);
-		return ResponseEntity.ok(Map.of("ok", true));
+		var readAt = matchReadStateService.markRead(userId, matchId);
+		presenceService.touch(userId);
+		realtimeMessageBroadcaster.broadcastReadReceipt(matchId, userId, readAt);
+		return ResponseEntity.ok(Map.of("ok", true, "readAt", readAt));
 	}
 
 	@DeleteMapping("/{matchId}")

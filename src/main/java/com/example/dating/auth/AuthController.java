@@ -78,6 +78,9 @@ public class AuthController {
 		if (u == null || !encoder.matches(req.password, u.getPasswordHash())) {
 			return ResponseEntity.status(401).body(Map.of("error", "invalid creds"));
 		}
+		u.setLastLogin(java.time.Instant.now());
+		u.setLastActiveAt(java.time.Instant.now());
+		users.save(u);
 		String claim = u.getEmail() != null ? u.getEmail()
 				: (u.getPhoneE164() != null ? u.getPhoneE164() : "");
 		String token = jwt.generate(u.getId(), claim);

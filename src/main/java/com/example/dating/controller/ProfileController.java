@@ -34,6 +34,7 @@ import com.example.dating.service.ProfileAvatarService;
 import com.example.dating.service.SubscriptionPlanService;
 import com.example.dating.service.TieredAiUsageService;
 import com.example.dating.service.UserSubscriptionService;
+import com.example.dating.service.PresenceService;
 
 import com.example.dating.model.entity.UserEntity;
 
@@ -54,11 +55,13 @@ public class ProfileController {
 	private final SubscriptionPlanService subscriptionPlanService;
 	private final UserSubscriptionService userSubscriptionService;
 	private final ProfileAvatarService profileAvatarService;
+	private final PresenceService presenceService;
 
 	public ProfileController(ProfileRepo repo, UserRepo users, PhotoRepo photoRepo, MediaUrls mediaUrls,
 			PasswordEncoder passwordEncoder, OnboardingRegistrationService onboarding, AiCoachService aiCoachService,
 			TieredAiUsageService tieredAiUsageService, SubscriptionPlanService subscriptionPlanService,
-			UserSubscriptionService userSubscriptionService, ProfileAvatarService profileAvatarService) {
+			UserSubscriptionService userSubscriptionService, ProfileAvatarService profileAvatarService,
+			PresenceService presenceService) {
 		this.repo = repo;
 		this.users = users;
 		this.photoRepo = photoRepo;
@@ -70,6 +73,7 @@ public class ProfileController {
 		this.subscriptionPlanService = subscriptionPlanService;
 		this.userSubscriptionService = userSubscriptionService;
 		this.profileAvatarService = profileAvatarService;
+		this.presenceService = presenceService;
 	}
 
 	@PutMapping("/password")
@@ -105,6 +109,7 @@ public class ProfileController {
 			return ResponseEntity.ok(onboarding.meForPendingPrincipal(Long.parseLong(sub.substring(8))));
 		}
 		Long id = Long.valueOf(sub);
+		presenceService.touch(id);
 		if (!repo.existsById(id))
 			return ResponseEntity.notFound().build();
 		var user = users.findById(id).orElseThrow();

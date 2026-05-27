@@ -1,8 +1,10 @@
 package com.example.dating.chat;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -79,6 +81,60 @@ public class ChatSessionRegistry {
 			payload.put("message", MessageViews.toBroadcastPayload(m));
 			String json = objectMapper.writeValueAsString(payload);
 			sendToUsers(Set.of(match.getUserA(), match.getUserB()), json);
+		} catch (Exception ignored) {
+		}
+	}
+
+	public void broadcastTyping(Long matchId, Long fromUserId, boolean isTyping) {
+		if (matchId == null || fromUserId == null) {
+			return;
+		}
+		Optional<MatchEntity> maybeMatch = matchRepo.findById(matchId);
+		if (maybeMatch.isEmpty()) {
+			return;
+		}
+		MatchEntity match = maybeMatch.get();
+		Long peerUserId = null;
+		if (fromUserId.equals(match.getUserA())) {
+			peerUserId = match.getUserB();
+		} else if (fromUserId.equals(match.getUserB())) {
+			peerUserId = match.getUserA();
+		}
+		if (peerUserId == null) {
+			return;
+		}
+		try {
+			Map<String, Object> payload = new LinkedHashMap<>();
+			payload.put("type", "typing");
+			payload.put("matchId", matchId);
+			payload.put("fromUserId", fromUserId);
+			payload.put("isTyping", isTyping);
+			String json = objectMapper.writeValueAsString(payload);
+			sendToUsers(Set.of(peerUserId), json);
+		} catch (Exception ignored) {
+		}
+	}
+
+	public void broadcastReadReceipt(Long matchId, Long readerUserId, Instant readAt) {
+		if (matchId == null || readerUserId == null || readAt == null) {
+			return;
+		}
+		MatchEntity match = matchRepo.findById(matchId).orElse(null);
+		if (match == null) {
+			return;
+		}
+		Long peerUserId = readerUserId.equals(match.getUserA()) ? match.getUserB() : match.getUserA();
+		if (peerUserId == null) {
+			return;
+		}
+		try {
+			Map<String, Object> payload = new LinkedHashMap<>();
+			payload.put("type", "read_receipt");
+			payload.put("matchId", matchId);
+			payload.put("readerUserId", readerUserId);
+			payload.put("readAt", readAt.toString());
+			String json = objectMapper.writeValueAsString(payload);
+			sendToUsers(Set.of(peerUserId), json);
 		} catch (Exception ignored) {
 		}
 	}
