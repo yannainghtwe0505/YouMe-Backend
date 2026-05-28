@@ -40,7 +40,7 @@ public class UserEntity {
 	private String locale;
 
 	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "ui_preferences", columnDefinition = "jsonb default '{}'::jsonb")
+	@Column(name = "ui_preferences", nullable = false)
 	private Map<String, Object> uiPreferences = new HashMap<>();
 
 	@PrePersist

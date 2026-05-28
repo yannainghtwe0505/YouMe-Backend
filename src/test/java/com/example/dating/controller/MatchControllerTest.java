@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.time.Instant;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.example.dating.service.BlockService;
 import com.example.dating.service.MatchQueryService;
 import com.example.dating.service.MatchReadStateService;
+import com.example.dating.service.PresenceService;
+import com.example.dating.service.RealtimeMessageBroadcaster;
 import com.example.dating.support.AbstractWebMvcSliceTest;
 
 @WebMvcTest(controllers = MatchController.class)
@@ -38,6 +41,12 @@ class MatchControllerTest extends AbstractWebMvcSliceTest {
 
 	@MockBean
 	private BlockService blockService;
+
+	@MockBean
+	private PresenceService presenceService;
+
+	@MockBean
+	private RealtimeMessageBroadcaster realtimeMessageBroadcaster;
 
 	@Test
 	void listMatches_ok() throws Exception {
@@ -66,6 +75,7 @@ class MatchControllerTest extends AbstractWebMvcSliceTest {
 		when(matchQueryService.userParticipatesInMatch(3L, 99L)).thenReturn(true);
 		when(matchQueryService.peerUserIdForMatch(99L, 3L)).thenReturn(Optional.of(40L));
 		when(blockService.eitherBlocked(3L, 40L)).thenReturn(false);
+		when(matchReadStateService.markRead(3L, 99L)).thenReturn(Instant.parse("2026-01-01T00:00:00Z"));
 		mockMvc.perform(post("/matches/99/read").with(userId(3L)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.ok").value(true));

@@ -21,9 +21,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.example.dating.model.entity.MessageEntity;
+import com.example.dating.repository.MatchReadStateRepo;
 import com.example.dating.repository.MessageRepo;
+import com.example.dating.repository.ProfileRepo;
 import com.example.dating.service.BlockService;
 import com.example.dating.service.MatchQueryService;
+import com.example.dating.service.PresenceService;
+import com.example.dating.service.PushNotificationService;
 import com.example.dating.service.RealtimeMessageBroadcaster;
 import com.example.dating.support.AbstractWebMvcSliceTest;
 
@@ -44,6 +48,18 @@ class MessageControllerTest extends AbstractWebMvcSliceTest {
 
 	@MockBean
 	private RealtimeMessageBroadcaster realtimeMessageBroadcaster;
+
+	@MockBean
+	private PresenceService presenceService;
+
+	@MockBean
+	private MatchReadStateRepo matchReadStateRepo;
+
+	@MockBean
+	private ProfileRepo profileRepo;
+
+	@MockBean
+	private PushNotificationService pushNotificationService;
 
 	@Test
 	void list_returns403_whenNotParticipant() throws Exception {

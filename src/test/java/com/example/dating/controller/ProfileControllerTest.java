@@ -24,6 +24,7 @@ import com.example.dating.repository.ProfileRepo;
 import com.example.dating.repository.UserRepo;
 import com.example.dating.service.AiCoachService;
 import com.example.dating.service.OnboardingRegistrationService;
+import com.example.dating.service.PresenceService;
 import com.example.dating.service.ProfileAvatarService;
 import com.example.dating.service.SubscriptionPlanService;
 import com.example.dating.service.TieredAiUsageService;
@@ -68,6 +69,9 @@ class ProfileControllerTest extends AbstractWebMvcSliceTest {
 
 	@MockBean
 	private ProfileAvatarService profileAvatarService;
+
+	@MockBean
+	private PresenceService presenceService;
 
 	@Test
 	void changePassword_returns400_whenCurrentWrong() throws Exception {

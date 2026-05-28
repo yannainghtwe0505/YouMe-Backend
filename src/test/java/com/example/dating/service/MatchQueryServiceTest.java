@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -27,6 +28,7 @@ import com.example.dating.repository.MatchReadStateRepo;
 import com.example.dating.repository.MatchRepo;
 import com.example.dating.repository.MessageRepo;
 import com.example.dating.repository.ProfileRepo;
+import com.example.dating.repository.UserRepo;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
@@ -46,6 +48,10 @@ class MatchQueryServiceTest {
 	private BlockService blockService;
 	@Mock
 	private ProfileAvatarService profileAvatarService;
+	@Mock
+	private PresenceService presenceService;
+	@Mock
+	private UserRepo userRepo;
 
 	@InjectMocks
 	private MatchQueryService matchQueryService;
@@ -63,6 +69,7 @@ class MatchQueryServiceTest {
 		long me = 1L;
 		when(blockService.hiddenPeerIdsFor(me)).thenReturn(Set.of(99L));
 		when(matchRepo.findAllByUserInvolved(me)).thenReturn(List.of(match(10L, me, 99L)));
+		when(userRepo.findById(anyLong())).thenReturn(Optional.empty());
 		assertTrue(matchQueryService.listMatchesForUser(me).isEmpty());
 	}
 
@@ -81,6 +88,8 @@ class MatchQueryServiceTest {
 				.thenReturn(0L);
 		when(messageRepo.findFirstByMatchIdOrderByCreatedAtDesc(20L)).thenReturn(Optional.empty());
 		when(profileAvatarService.resolveAvatarUrl(eq(7L), eq(peer))).thenReturn("https://cdn.example/avatar.jpg");
+		when(userRepo.findById(7L)).thenReturn(Optional.empty());
+		when(presenceService.isOnline(null)).thenReturn(false);
 
 		List<Map<String, Object>> rows = matchQueryService.listMatchesForUser(me);
 		assertEquals(1, rows.size());
