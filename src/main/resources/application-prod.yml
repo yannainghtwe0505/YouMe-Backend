@@ -15,7 +15,7 @@ spring:
 app:
   urls:
     api-public-base-url: ${APP_API_PUBLIC_BASE_URL:https://api.youme.com}
-    frontend-base-url: ${APP_FRONTEND_BASE_URL:https://app.youme.com}
+    frontend-base-url: ${APP_FRONTEND_BASE_URL:https://youme.mangbyte.com}
     mobile-base-url: ${APP_MOBILE_BASE_URL:}
     websocket-public-base-url: ${APP_WS_PUBLIC_BASE_URL:}
-    cors-allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:https://app.youme.com}
+    cors-allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:https://youme.mangbyte.com,http://localhost:3000}

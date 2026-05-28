@@ -75,6 +75,29 @@ app:
 #     presigned-get:
 #       enabled: true
 
+# --- Web Push (VAPID) ---
+# From repo root (prints keys only):
+#   node backend/scripts/generate-vapid-keys.mjs
+# Or write into application-local.yml automatically:
+#   node backend/scripts/generate-vapid-keys.mjs --write
+# From frontend/: npm run generate-vapid:write
+# Or env: PUSH_WEB_ENABLED=true, PUSH_VAPID_PUBLIC_KEY, PUSH_VAPID_PRIVATE_KEY, PUSH_VAPID_SUBJECT
+# app:
+#   push:
+#     web:
+#       enabled: true
+#       vapid-public-key: "BEl..."
+#       vapid-private-key: "..."
+#       vapid-subject: "mailto:support@youme.app"
+
+# --- FCM (Firebase) for Android / iOS / FCM web tokens ---
+# app:
+#   push:
+#     fcm:
+#       enabled: true
+#       credentials-path: "/path/to/firebase-service-account.json"
+# Or env: PUSH_FCM_ENABLED=true, FIREBASE_CREDENTIALS_PATH
+
 # --- Gmail / SMTP ---
 # spring:
 #   mail:

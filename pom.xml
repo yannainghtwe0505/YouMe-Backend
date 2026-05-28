@@ -135,6 +135,20 @@
             <version>2.5.0</version>
         </dependency>
 
+        <!-- Web Push (VAPID) for browser notifications -->
+        <dependency>
+            <groupId>nl.martijndwars</groupId>
+            <artifactId>web-push</artifactId>
+            <version>5.1.1</version>
+        </dependency>
+
+        <!-- FCM (Firebase Cloud Messaging) for mobile / FCM web tokens -->
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>9.4.3</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>com.h2database</groupId>

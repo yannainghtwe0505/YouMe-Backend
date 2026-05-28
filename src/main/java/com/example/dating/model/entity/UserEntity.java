@@ -2,8 +2,12 @@ package com.example.dating.model.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "users")
@@ -34,6 +38,10 @@ public class UserEntity {
 	private Instant privacyAcceptedAt;
 	@Column(length = 12)
 	private String locale;
+
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "ui_preferences", columnDefinition = "jsonb default '{}'::jsonb")
+	private Map<String, Object> uiPreferences = new HashMap<>();
 
 	@PrePersist
 	void pre() {
@@ -135,5 +143,13 @@ public class UserEntity {
 
 	public void setLocale(String locale) {
 		this.locale = locale;
+	}
+
+	public Map<String, Object> getUiPreferences() {
+		return uiPreferences;
+	}
+
+	public void setUiPreferences(Map<String, Object> uiPreferences) {
+		this.uiPreferences = uiPreferences == null ? new HashMap<>() : uiPreferences;
 	}
 }

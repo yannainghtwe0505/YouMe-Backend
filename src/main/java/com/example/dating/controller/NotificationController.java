@@ -13,14 +13,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.dating.service.NotificationPreferenceService;
+import com.example.dating.service.WebPushNotificationSender;
 
 @RestController
 @RequestMapping("/me/notifications")
 public class NotificationController {
 	private final NotificationPreferenceService notificationPreferenceService;
+	private final WebPushNotificationSender webPushNotificationSender;
 
-	public NotificationController(NotificationPreferenceService notificationPreferenceService) {
+	public NotificationController(NotificationPreferenceService notificationPreferenceService,
+			WebPushNotificationSender webPushNotificationSender) {
 		this.notificationPreferenceService = notificationPreferenceService;
+		this.webPushNotificationSender = webPushNotificationSender;
+	}
+
+	@GetMapping("/web-push/config")
+	public ResponseEntity<?> webPushConfig() {
+		return ResponseEntity.ok(Map.of(
+				"enabled", webPushNotificationSender.isConfigured(),
+				"publicKey", webPushNotificationSender.isConfigured()
+						? webPushNotificationSender.publicKey()
+						: ""));
 	}
 
 	public static class DeviceTokenReq {

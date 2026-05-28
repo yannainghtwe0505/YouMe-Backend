@@ -11,6 +11,10 @@ CREATE TABLE IF NOT EXISTS user_subscription (
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE user_subscription
+	ALTER COLUMN created_at SET DEFAULT now(),
+	ALTER COLUMN updated_at SET DEFAULT now();
+
 CREATE INDEX IF NOT EXISTS idx_user_subscription_lifecycle ON user_subscription (lifecycle_status);
 CREATE INDEX IF NOT EXISTS idx_user_subscription_provider ON user_subscription (billing_provider);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_subscription_external_unique ON user_subscription (external_subscription_id)
@@ -24,7 +28,9 @@ INSERT INTO user_subscription (
 	receipt_data,
 	lifecycle_status,
 	current_period_end,
-	cancel_at_period_end
+	cancel_at_period_end,
+	created_at,
+	updated_at
 )
 SELECT
 	p.user_id,
@@ -41,6 +47,8 @@ SELECT
 		ELSE 'ACTIVE'
 	END,
 	NULL,
-	FALSE
+	FALSE,
+	now(),
+	now()
 FROM profiles p
 ON CONFLICT (user_id) DO NOTHING;

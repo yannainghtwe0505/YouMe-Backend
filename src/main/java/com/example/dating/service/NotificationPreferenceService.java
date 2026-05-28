@@ -70,7 +70,7 @@ public class NotificationPreferenceService {
 			throw new IllegalArgumentException("token is required");
 		}
 		String out = token.trim();
-		if (out.length() > 512) {
+		if (out.length() > 8000) {
 			throw new IllegalArgumentException("token too long");
 		}
 		return out;

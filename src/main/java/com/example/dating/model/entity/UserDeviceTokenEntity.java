@@ -18,7 +18,7 @@ public class UserDeviceTokenEntity {
 	private Long id;
 	@Column(name = "user_id", nullable = false)
 	private Long userId;
-	@Column(nullable = false, unique = true, length = 512)
+	@Column(nullable = false, unique = true, columnDefinition = "TEXT")
 	private String token;
 	@Column(nullable = false, length = 24)
 	private String platform;
